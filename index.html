@@ -52,10 +52,10 @@
                     <label class="block text-[11px] text-slate-500 mb-1 ml-1 font-bold">ขั้นตอนที่เกิดความคลาดเคลื่อน *</label>
                     <select id="process" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-50/50">
                         <option value="">-- เลือกขั้นตอนที่เกิดปัญหา --</option>
-                        <option value="Prescribing">Prescribing: แพทย์สั่งยา</option>
-                        <option value="Transcribing">Transcribing: การคัดลอก/คีย์คำสั่ง</option>
-                        <option value="Dispensing">Dispensing: การจัดยา/จ่ายยา</option>
-                        <option value="Administration">Administration: การบริหารยา</option>
+                        <option value="Prescribing">Prescribing (สั่งยา): เช่น แพทย์สั่งยาผิดตัว, สั่ง Dose/Route ผิด, สั่งยาที่ผู้ป่วยแพ้</option>
+                        <option value="Transcribing">Transcribing (คัดลอก): เช่น พยาบาลคัดลอกลง Kardex ผิด, คีย์ยาเข้าคอมผิดตัว/ผิดเวลา</option>
+                        <option value="Dispensing">Dispensing (จัด/จ่ายยา): เช่น ห้องยาจัดยาผิด, พยาบาลหยิบยาใส่รถยาผิดจากที่สั่ง</option>
+                        <option value="Administration">Administration (บริหารยา): เช่น ให้ยาผิดคน, ผิดตัว, ผิดขนาด, ลืมให้ยา</option>
                     </select>
                 </div>
                 <div class="md:col-span-2">
@@ -70,26 +70,26 @@
                 <select id="severity" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-50/50">
                     <option value="">-- เลือกระดับความรุนแรง --</option>
                     <optgroup label="Near Miss (เกือบพลาด)">
-                        <option value="A">ระดับ A: มีโอกาสเกิดผิดพลาด</option>
-                        <option value="B">ระดับ B: เกิดความผิดพลาดแต่หยุดทัน</option>
+                        <option value="A">ระดับ A: มีโอกาสเกิด (เช่น แพทย์สั่งยาผิดแต่เภสัชกร/พยาบาลทักท้วงได้ก่อนคีย์)</option>
+                        <option value="B">ระดับ B: เกิดผิดพลาดแต่หยุดทัน (เช่น ห้องยาจัดยาผิด แต่พยาบาลตรวจพบก่อนนำไปให้ผู้ป่วย)</option>
                     </optgroup>
                     <optgroup label="No Harm (ถึงตัวแต่ไม่บาดเจ็บ)">
-                        <option value="C">ระดับ C: ถึงตัวแต่ไม่บาดเจ็บ</option>
-                        <option value="D">ระดับ D: ถึงตัว ต้องเฝ้าระวังเพิ่ม</option>
+                        <option value="C">ระดับ C: ถึงตัวแต่ไม่บาดเจ็บ (เช่น ให้ยาผิดมื้อ/ผิดตัว แต่ผู้ป่วยปกติ ไม่ต้องทำอะไรเพิ่ม)</option>
+                        <option value="D">ระดับ D: ถึงตัว ต้องเฝ้าระวัง (เช่น ให้ยาเกินขนาด ต้องเจาะเลือดดูระดับยา/Monitor V.S. เพิ่ม)</option>
                     </optgroup>
                     <optgroup label="Harm (เกิดอันตราย)">
-                        <option value="E">ระดับ E: อันตรายชั่วคราว รักษาเพิ่ม</option>
-                        <option value="F">ระดับ F: อันตรายชั่วคราว นอนนานขึ้น</option>
-                        <option value="G">ระดับ G: อันตรายถาวร/พิการ</option>
-                        <option value="H">ระดับ H: เกือบเสียชีวิต</option>
-                        <option value="I">ระดับ I: เสียชีวิต</option>
+                        <option value="E">ระดับ E: อันตรายชั่วคราว ต้องรักษา (เช่น เกิดผื่นคันแพ้ยา ต้องฉีด CPM แก้แพ้)</option>
+                        <option value="F">ระดับ F: อันตรายชั่วคราว นอนนานขึ้น (เช่น ให้ยาผิดจนใจสั่น ต้องย้ายเข้าสังเกตอาการใกล้ชิด)</option>
+                        <option value="G">ระดับ G: อันตรายถาวร/พิการ (เช่น ให้ยาผิดจนผู้ป่วยเกิดภาวะไตวายถาวร หรือสูญเสียการทำงานของอวัยวะ)</option>
+                        <option value="H">ระดับ H: เกือบเสียชีวิต (เช่น ให้ยา KCL IV Push จนหัวใจหยุดเต้น ต้องปั๊ม CPR ช่วยชีวิต)</option>
+                        <option value="I">ระดับ I: เสียชีวิต (เช่น การบริหารยาผิดพลาดเป็นสาเหตุโดยตรงให้ผู้ป่วยเสียชีวิต)</option>
                     </optgroup>
                 </select>
             </div>
 
             <div>
                 <label class="block text-[11px] text-slate-500 mb-1 ml-1 font-bold">รายละเอียดเหตุการณ์ *</label>
-                <textarea id="details" rows="3" placeholder="ระบุเหตุการณ์..." class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm bg-slate-50/50"></textarea>
+                <textarea id="details" rows="3" placeholder="ระบุรายละเอียดเหตุการณ์..." class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm bg-slate-50/50"></textarea>
             </div>
 
             <div>
