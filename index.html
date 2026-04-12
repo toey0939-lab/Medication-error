@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Medication Error System - Range Filter</title>
+    <title>Medication Error System - Med Male 1</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -23,7 +23,7 @@
     <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3">
         <div class="max-w-4xl mx-auto flex justify-between items-center">
             <h1 class="text-xl font-bold text-indigo-600 flex items-center">
-                <i class="fa-solid fa-pills mr-2"></i>Medication Error System
+                <i class="fa-solid fa-pills mr-2"></i>Med Male 1 - ME System
             </h1>
             <div id="syncStatus" class="text-slate-400 text-[10px] font-bold uppercase">
                 <i class="fa-solid fa-circle-notch fa-spin mr-1"></i>ตรวจสอบข้อมูล...
@@ -31,35 +31,12 @@
         </div>
     </nav>
 
-    <main class="max-w-2xl mx-auto p-4 space-y-6">
+    <main class="max-w-2xl mx-auto p-4 space-y-8">
         
-        <!-- Dashboard Statistics -->
-        <div class="space-y-3">
-            <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest px-1">สรุปสถิติตามช่วงเวลาที่เลือก</h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div class="card p-4 text-center bg-white border-slate-100">
-                    <p class="text-[10px] text-slate-400 uppercase font-bold">Total</p>
-                    <p id="statTotal" class="text-2xl font-bold text-indigo-600">-</p>
-                </div>
-                <div class="card p-4 text-center bg-emerald-50 border-emerald-100">
-                    <p class="text-[10px] text-emerald-600 uppercase font-bold">Near Miss</p>
-                    <p id="statNearMiss" class="text-2xl font-bold text-emerald-700">-</p>
-                </div>
-                <div class="card p-4 text-center bg-amber-50 border-amber-100">
-                    <p class="text-[10px] text-amber-600 uppercase font-bold">No Harm</p>
-                    <p id="statError" class="text-2xl font-bold text-amber-700">-</p>
-                </div>
-                <div class="card p-4 text-center bg-rose-50 border-rose-100">
-                    <p class="text-[10px] text-rose-600 uppercase font-bold">Harm</p>
-                    <p id="statHarm" class="text-2xl font-bold text-rose-700">-</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Form Section -->
+        <!-- 1. บันทึกรายงานอุบัติการณ์ความคลาดเคลื่อนของยา (บนสุด) -->
         <div class="card p-6 md:p-8 space-y-6 border-t-4 border-t-indigo-500 shadow-xl">
             <h2 class="text-lg font-bold text-slate-700 flex items-center border-b pb-4">
-                <i class="fa-solid fa-clipboard-list mr-2 text-indigo-500"></i>บันทึกรายงานอุบัติการณ์
+                <i class="fa-solid fa-clipboard-list mr-2 text-indigo-500"></i>บันทึกรายงานอุบัติการณ์ความคลาดเคลื่อนของยา
             </h2>
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -75,15 +52,15 @@
                     <label class="block text-[11px] text-slate-500 mb-1 ml-1 font-bold">ขั้นตอนที่เกิดความคลาดเคลื่อน *</label>
                     <select id="process" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-50/50">
                         <option value="">-- เลือกขั้นตอนที่เกิดปัญหา --</option>
-                        <option value="Prescribing">Prescribing: แพทย์สั่งยา (เช่น สั่งยาผิดตัว, เขียน Dose/Route ผิด)</option>
-                        <option value="Transcribing">Transcribing: การคัดลอก (เช่น คีย์ยาเข้าคอมผิด, ลอกลง Kardex ผิด)</option>
-                        <option value="Dispensing">Dispensing: จัดยา/จ่ายยา (เช่น ห้องยาจัดยาผิด, พยาบาลหยิบยาใส่รถผิด)</option>
-                        <option value="Administration">Administration: การบริหารยา (เช่น พยาบาลให้ยาผิดคน, ผิดเวลา, ลืมให้ยา)</option>
+                        <option value="Prescribing">Prescribing: แพทย์สั่งยา</option>
+                        <option value="Transcribing">Transcribing: การคัดลอก/คีย์คำสั่ง</option>
+                        <option value="Dispensing">Dispensing: การจัดยา/จ่ายยา</option>
+                        <option value="Administration">Administration: การบริหารยา</option>
                     </select>
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-[11px] text-slate-500 mb-1 ml-1 font-bold">ชื่อยาที่มีปัญหา *</label>
-                    <input type="text" id="drugName" list="drugList" placeholder="พิมพ์ชื่อยาที่เกิดความคลาดเคลื่อน..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-50/50">
+                    <input type="text" id="drugName" list="drugList" placeholder="พิมพ์ชื่อยา..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-50/50">
                     <datalist id="drugList"></datalist>
                 </div>
             </div>
@@ -91,33 +68,33 @@
             <div>
                 <label class="block text-[11px] text-slate-500 mb-1 ml-1 font-bold">ระดับความรุนแรง (A-I) *</label>
                 <select id="severity" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-50/50">
-                    <option value="">-- เลือกระดับความรุนแรงตามผลลัพธ์ --</option>
+                    <option value="">-- เลือกระดับความรุนแรง --</option>
                     <optgroup label="Near Miss (เกือบพลาด)">
-                        <option value="A">ระดับ A: มีโอกาสเกิดผิดพลาด (เช่น แพทย์สั่งยาผิดแต่เภสัชกรตรวจพบก่อนคีย์)</option>
-                        <option value="B">ระดับ B: เกิดความผิดพลาดแต่หยุดทัน (เช่น ห้องยาจัดยาผิด แต่พยาบาลพบก่อนนำไปที่เตียง)</option>
+                        <option value="A">ระดับ A: มีโอกาสเกิดผิดพลาด</option>
+                        <option value="B">ระดับ B: เกิดความผิดพลาดแต่หยุดทัน</option>
                     </optgroup>
                     <optgroup label="No Harm (ถึงตัวแต่ไม่บาดเจ็บ)">
-                        <option value="C">ระดับ C: ถึงตัวแต่ไม่บาดเจ็บ (เช่น ให้ยาผิดมื้อ/ผิดตัว แต่ผู้ป่วยไม่เป็นอะไร)</option>
-                        <option value="D">ระดับ D: ถึงตัว ต้องเฝ้าระวังเพิ่ม (เช่น ให้ยาเกินขนาด ต้องเจาะเลือดดูระดับยา/V.S.)</option>
+                        <option value="C">ระดับ C: ถึงตัวแต่ไม่บาดเจ็บ</option>
+                        <option value="D">ระดับ D: ถึงตัว ต้องเฝ้าระวังเพิ่ม</option>
                     </optgroup>
                     <optgroup label="Harm (เกิดอันตราย)">
-                        <option value="E">ระดับ E: อันตรายชั่วคราว รักษาเพิ่ม (เช่น เกิดผื่นคันแพ้ยา ต้องฉีด CPM แก้แพ้)</option>
-                        <option value="F">ระดับ F: อันตรายชั่วคราว นอน รพ. นานขึ้น (เช่น เกิดอาการใจสั่นจากยาผิดจนเลื่อนวันกลับบ้าน)</option>
-                        <option value="G">ระดับ G: อันตรายถาวร/พิการ (เช่น ให้ยาผิดจนผู้ป่วยเกิดภาวะไตวายถาวรต้องฟอกไต)</option>
-                        <option value="H">ระดับ H: เกือบเสียชีวิต (เช่น ให้ยา KCL IV Push จนหัวใจหยุดเต้น ต้องปั๊ม CPR)</option>
-                        <option value="I">ระดับ I: เสียชีวิต (เช่น การบริหารยาผิดพลาดเป็นสาเหตุให้ผู้ป่วยเสียชีวิต)</option>
+                        <option value="E">ระดับ E: อันตรายชั่วคราว รักษาเพิ่ม</option>
+                        <option value="F">ระดับ F: อันตรายชั่วคราว นอนนานขึ้น</option>
+                        <option value="G">ระดับ G: อันตรายถาวร/พิการ</option>
+                        <option value="H">ระดับ H: เกือบเสียชีวิต</option>
+                        <option value="I">ระดับ I: เสียชีวิต</option>
                     </optgroup>
                 </select>
             </div>
 
             <div>
                 <label class="block text-[11px] text-slate-500 mb-1 ml-1 font-bold">รายละเอียดเหตุการณ์ *</label>
-                <textarea id="details" rows="3" placeholder="ระบุลำดับเหตุการณ์ และแนวทางการแก้ไขเบื้องต้น..." class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm bg-slate-50/50"></textarea>
+                <textarea id="details" rows="3" placeholder="ระบุเหตุการณ์..." class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm bg-slate-50/50"></textarea>
             </div>
 
             <div>
                 <label class="block text-[11px] text-slate-500 mb-1 ml-1 font-bold">ผู้รายงาน *</label>
-                <input type="text" id="reporter" placeholder="ระบุชื่อผู้บันทึกรายงาน" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-50/50">
+                <input type="text" id="reporter" placeholder="ระบุชื่อผู้บันทึก" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-50/50">
             </div>
 
             <button onclick="saveError()" id="btnSubmit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center">
@@ -125,13 +102,39 @@
             </button>
         </div>
 
-        <!-- Filter Range Control -->
+        <!-- 2. Dash board (กลาง) -->
+        <div class="space-y-3">
+            <div class="flex justify-between items-end px-1">
+                <h2 id="statsLabel" class="text-xs font-bold text-slate-500 uppercase tracking-widest">สรุปภาพรวมทั้งหมด</h2>
+                <span id="currentFilterText" class="text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full">ดูข้อมูลทั้งหมด</span>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div class="card p-4 text-center bg-white border-slate-100">
+                    <p class="text-[10px] text-slate-400 uppercase font-bold">Total</p>
+                    <p id="statTotal" class="text-2xl font-bold text-indigo-600">-</p>
+                </div>
+                <div class="card p-4 text-center bg-emerald-50 border-emerald-100">
+                    <p class="text-[10px] text-emerald-600 uppercase font-bold">Near Miss (A-B)</p>
+                    <p id="statNearMiss" class="text-2xl font-bold text-emerald-700">-</p>
+                </div>
+                <div class="card p-4 text-center bg-amber-50 border-amber-100">
+                    <p class="text-[10px] text-amber-600 uppercase font-bold">No Harm (C-D)</p>
+                    <p id="statError" class="text-2xl font-bold text-amber-700">-</p>
+                </div>
+                <div class="card p-4 text-center bg-rose-50 border-rose-100">
+                    <p class="text-[10px] text-rose-600 uppercase font-bold">Harm (E-I)</p>
+                    <p id="statHarm" class="text-2xl font-bold text-rose-700">-</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. ตัวกรอง (ต่อมา) -->
         <div class="card p-5 space-y-4 border-l-4 border-l-indigo-400">
             <div class="flex items-center justify-between">
                 <h3 class="text-xs font-bold text-slate-600 uppercase tracking-widest flex items-center">
                     <i class="fa-solid fa-calendar-range mr-2"></i>ตัวกรองช่วงเวลา (Range Filter)
                 </h3>
-                <button onclick="resetFilters()" class="text-[10px] text-indigo-500 font-bold hover:underline">ล้างตัวกรอง</button>
+                <button onclick="resetFilters()" class="text-[10px] text-indigo-500 font-bold hover:underline">แสดงข้อมูลทั้งหมด</button>
             </div>
             
             <div class="grid grid-cols-2 gap-4">
@@ -150,11 +153,16 @@
                     </div>
                 </div>
             </div>
-            <p class="text-[10px] text-slate-400 italic leading-tight">* ตัวอย่าง: เลือก ต.ค. 2568 ถึง เม.ย. 2569 ข้อมูล Dashboard และประวัติด้านล่างจะคำนวณใหม่ทันที</p>
+            <div id="filterStatus" class="hidden text-[10px] text-indigo-600 font-bold bg-indigo-50 p-2 rounded-lg text-center animate-fade">
+                <i class="fa-solid fa-info-circle mr-1"></i>กำลังแสดงข้อมูลแบบกำหนดช่วงเวลา
+            </div>
         </div>
 
-        <!-- History List -->
-        <div id="historyList" class="space-y-4"></div>
+        <!-- 4. เหตุการณ์ที่ลงรายงาน (ปิดท้าย) -->
+        <div class="space-y-4">
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest px-1">ประวัติรายงานอุบัติการณ์</h3>
+            <div id="historyList" class="space-y-4"></div>
+        </div>
 
     </main>
 
@@ -167,6 +175,7 @@
 
         const MONTHS = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
         let allRecords = [];
+        let isInitialLoad = true;
 
         async function fetchData() {
             if (!CONFIG.scriptUrl) {
@@ -194,63 +203,78 @@
             const startY = document.getElementById('startYear');
             const endY = document.getElementById('endYear');
 
-            // Populate Months
             const monthOptions = MONTHS.map((m, i) => `<option value="${i}">${m}</option>`).join('');
-            startM.innerHTML = monthOptions;
-            endM.innerHTML = monthOptions;
+            startM.innerHTML = `<option value="all">เลือกเดือน</option>` + monthOptions;
+            endM.innerHTML = `<option value="all">เลือกเดือน</option>` + monthOptions;
 
-            // Populate Years (จากข้อมูลที่มี หรือบวกลบ 5 ปีจากปัจจุบัน)
             const currentYear = new Date().getFullYear();
             let years = [...new Set(allRecords.map(r => new Date(r.eventDate).getFullYear()))].filter(y => !isNaN(y));
             if (years.length === 0) years = [currentYear];
             
-            // เพิ่มปีให้ครอบคลุมเผื่ออนาคต/อดีต
-            const minYear = Math.min(...years, currentYear - 1);
+            const minYear = Math.min(...years, currentYear - 5);
             const maxYear = Math.max(...years, currentYear + 1);
             
-            let yearOptions = '';
+            let yearOptions = '<option value="all">เลือกปี</option>';
             for (let y = minYear; y <= maxYear; y++) {
                 yearOptions += `<option value="${y}">พ.ศ. ${y + 543}</option>`;
             }
             startY.innerHTML = yearOptions;
             endY.innerHTML = yearOptions;
 
-            // Set Default (เดือนปัจจุบัน)
-            startM.value = "0"; // เริ่มที่ ม.ค. ปีปัจจุบัน
-            startY.value = currentYear;
-            endM.value = "11"; // สิ้นสุดที่ ธ.ค. ปีปัจจุบัน
-            endY.value = currentYear;
+            if(isInitialLoad) {
+                startM.value = "all";
+                startY.value = "all";
+                endM.value = "all";
+                endY.value = "all";
+                isInitialLoad = false;
+            }
         }
 
         function resetFilters() {
-            initFilterOptions();
+            document.getElementById('startMonth').value = "all";
+            document.getElementById('startYear').value = "all";
+            document.getElementById('endMonth').value = "all";
+            document.getElementById('endYear').value = "all";
             render();
         }
 
         function render() {
             const list = document.getElementById('historyList');
+            const statsLabel = document.getElementById('statsLabel');
+            const filterText = document.getElementById('currentFilterText');
+            const filterStatusBox = document.getElementById('filterStatus');
             
-            // ดึงค่าจากตัวกรองช่วงเวลา
-            const sM = parseInt(document.getElementById('startMonth').value);
-            const sY = parseInt(document.getElementById('startYear').value);
-            const eM = parseInt(document.getElementById('endMonth').value);
-            const eY = parseInt(document.getElementById('endYear').value);
+            const sM = document.getElementById('startMonth').value;
+            const sY = document.getElementById('startYear').value;
+            const eM = document.getElementById('endMonth').value;
+            const eY = document.getElementById('endYear').value;
 
-            // สร้าง Date object สำหรับเปรียบเทียบ (วันแรกของเดือนเริ่ม - วันสุดท้ายของเดือนจบ)
-            const startDate = new Date(sY, sM, 1);
-            const endDate = new Date(eY, eM + 1, 0, 23, 59, 59);
+            let filtered = [...allRecords];
+            const isFiltering = (sM !== "all" && sY !== "all" && eM !== "all" && eY !== "all");
 
-            let filtered = allRecords.filter(r => {
-                const rDate = new Date(r.eventDate);
-                return rDate >= startDate && rDate <= endDate;
-            });
+            if (isFiltering) {
+                const startDate = new Date(parseInt(sY), parseInt(sM), 1);
+                const endDate = new Date(parseInt(eY), parseInt(eM) + 1, 0, 23, 59, 59);
+                filtered = allRecords.filter(r => {
+                    const rDate = new Date(r.eventDate);
+                    return rDate >= startDate && rDate <= endDate;
+                });
+                statsLabel.innerText = "สรุปสถิติตามช่วงเวลาที่เลือก";
+                filterText.innerText = "กำลังกรองข้อมูล";
+                filterText.className = "text-[10px] font-bold text-amber-500 bg-amber-50 px-2 py-0.5 rounded-full";
+                filterStatusBox.classList.remove('hidden');
+            } else {
+                statsLabel.innerText = "สรุปภาพรวมทั้งหมด";
+                filterText.innerText = "ดูข้อมูลทั้งหมด";
+                filterText.className = "text-[10px] font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full";
+                filterStatusBox.classList.add('hidden');
+            }
 
-            // Update Dashboard
             updateDashboard(filtered);
 
             list.innerHTML = '';
             if (filtered.length === 0) {
-                list.innerHTML = '<div class="text-center py-20 text-slate-400 italic text-sm animate-fade">ไม่พบข้อมูลในช่วงเวลาที่เลือก</div>';
+                list.innerHTML = '<div class="text-center py-20 text-slate-400 italic text-sm animate-fade">ไม่พบข้อมูล</div>';
                 return;
             }
 
@@ -267,13 +291,13 @@
                     </div>
                     <div class="space-y-1">
                         <div class="text-[10px] font-bold text-indigo-500 uppercase italic flex items-center">
-                            <i class="fa-solid fa-stethoscope mr-1"></i>${r.process}
+                            <i class="fa-solid fa-circle-exclamation mr-1"></i>${r.process}
                         </div>
                         <p class="text-sm text-slate-600 leading-relaxed">${r.details}</p>
                     </div>
                     <div class="mt-4 pt-3 border-t border-slate-50 flex justify-between items-center text-[10px] text-slate-400">
                         <span>ผู้รายงาน: ${r.reporter}</span>
-                        <i class="fa-solid fa-user-nurse"></i>
+                        <i class="fa-solid fa-id-card-clip"></i>
                     </div>
                 `;
                 list.appendChild(card);
@@ -294,7 +318,6 @@
             document.getElementById('statError').innerText = stats.cd;
             document.getElementById('statHarm').innerText = stats.ei;
             
-            // Trigger animation
             ['statTotal', 'statNearMiss', 'statError', 'statHarm'].forEach(id => {
                 const el = document.getElementById(id);
                 el.classList.remove('animate-fade');
