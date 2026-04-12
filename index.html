@@ -46,7 +46,8 @@
                 </div>
                 <div>
                     <label class="block text-[11px] text-slate-500 mb-1 ml-1 font-bold">เลข HN ผู้ป่วย *</label>
-                    <input type="text" id="hn" placeholder="ระบุ HN" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-50/50">
+                    <input type="text" id="hn" list="hnList" placeholder="ระบุ HN" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-50/50">
+                    <datalist id="hnList"></datalist>
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-[11px] text-slate-500 mb-1 ml-1 font-bold">ขั้นตอนที่เกิดความคลาดเคลื่อน *</label>
@@ -94,7 +95,8 @@
 
             <div>
                 <label class="block text-[11px] text-slate-500 mb-1 ml-1 font-bold">ผู้รายงาน *</label>
-                <input type="text" id="reporter" placeholder="ระบุชื่อผู้บันทึก" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-50/50">
+                <input type="text" id="reporter" list="reporterList" placeholder="ระบุชื่อผู้บันทึก" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-50/50">
+                <datalist id="reporterList"></datalist>
             </div>
 
             <button onclick="saveError()" id="btnSubmit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center">
@@ -177,6 +179,14 @@
         let allRecords = [];
         let isInitialLoad = true;
 
+        // ระบบจดจำข้อมูลล่าสุด
+        function loadSavedInfo() {
+            const savedReporter = localStorage.getItem('lastReporter');
+            if (savedReporter) {
+                document.getElementById('reporter').value = savedReporter;
+            }
+        }
+
         async function fetchData() {
             if (!CONFIG.scriptUrl) {
                 document.getElementById('historyList').innerHTML = '<div class="card p-10 text-center text-slate-400">กรุณาตั้งค่า Script URL เพื่อเชื่อมต่อฐานข้อมูล</div>';
@@ -187,7 +197,7 @@
                 const response = await fetch(CONFIG.scriptUrl);
                 allRecords = await response.json();
                 
-                updateDrugSuggestions();
+                updateSuggestions(); // อัปเดตคำแนะนำทั้งหมด (HN, Drug, Reporter)
                 initFilterOptions();
                 render();
                 
@@ -317,24 +327,27 @@
             document.getElementById('statNearMiss').innerText = stats.ab;
             document.getElementById('statError').innerText = stats.cd;
             document.getElementById('statHarm').innerText = stats.ei;
-            
-            ['statTotal', 'statNearMiss', 'statError', 'statHarm'].forEach(id => {
-                const el = document.getElementById(id);
-                el.classList.remove('animate-fade');
-                void el.offsetWidth;
-                el.classList.add('animate-fade');
-            });
         }
 
-        function updateDrugSuggestions() {
-            const list = document.getElementById('drugList');
+        // ระบบ Autocomplete สำหรับ HN, Drug, Reporter
+        function updateSuggestions() {
+            const hns = [...new Set(allRecords.map(r => r.hn))].filter(Boolean);
             const drugs = [...new Set(allRecords.map(r => r.drugName))].filter(Boolean);
-            list.innerHTML = '';
-            drugs.forEach(d => {
-                const opt = document.createElement('option');
-                opt.value = d;
-                list.appendChild(opt);
-            });
+            const reporters = [...new Set(allRecords.map(r => r.reporter))].filter(Boolean);
+
+            const fillList = (id, data) => {
+                const list = document.getElementById(id);
+                list.innerHTML = '';
+                data.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item;
+                    list.appendChild(opt);
+                });
+            };
+
+            fillList('hnList', hns);
+            fillList('drugList', drugs);
+            fillList('reporterList', reporters);
         }
 
         async function saveError() {
@@ -350,6 +363,9 @@
             };
 
             if (Object.values(data).some(v => !v)) return showAlert('กรุณากรอกข้อมูลให้ครบทุกช่อง', 'error');
+
+            // บันทึกผู้รายงานลง localStorage เพื่อใช้ครั้งต่อไป
+            localStorage.setItem('lastReporter', data.reporter);
 
             const btn = document.getElementById('btnSubmit');
             btn.disabled = true;
@@ -381,7 +397,10 @@
         }
 
         function resetForm() {
-            ['hn', 'process', 'drugName', 'details', 'severity', 'reporter'].forEach(id => document.getElementById(id).value = '');
+            const oldReporter = document.getElementById('reporter').value;
+            ['hn', 'process', 'drugName', 'details', 'severity'].forEach(id => document.getElementById(id).value = '');
+            // คงชื่อผู้รายงานไว้เพื่อความสะดวก
+            document.getElementById('reporter').value = oldReporter;
             document.getElementById('eventDate').valueAsDate = new Date();
         }
 
@@ -396,6 +415,7 @@
 
         window.onload = () => {
             document.getElementById('eventDate').valueAsDate = new Date();
+            loadSavedInfo();
             fetchData();
         };
     </script>
