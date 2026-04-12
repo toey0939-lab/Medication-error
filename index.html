@@ -3,196 +3,315 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Medication Error Reporting System</title>
+    <title>Medication Error System - Range Filter</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap');
-        
-        body {
-            font-family: 'Kanit', sans-serif;
-            background-color: #f1f5f9;
-            color: #1e293b;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .card { 
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 1.5rem;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade { animation: fadeIn 0.3s ease-out forwards; }
-        
-        .severity-badge {
-            padding: 2px 8px;
-            border-radius: 6px;
-            font-size: 11px;
-            font-weight: bold;
-        }
-
-        input::-webkit-calendar-picker-indicator {
-            display: none !important;
-        }
-        
-        select {
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 0.5rem center;
-            background-size: 1.5em 1.5em;
-        }
+        body { font-family: 'Kanit', sans-serif; background-color: #f1f5f9; color: #1e293b; }
+        .card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 1.5rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+        .severity-badge { padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: bold; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade { animation: fadeIn 0.4s ease-out forwards; }
+        input:focus, select:focus, textarea:focus { border-color: #4f46e5; ring: 2px; ring-color: #4f46e5; outline: none; }
+        optgroup { font-weight: bold; color: #4f46e5; }
     </style>
 </head>
-<body class="min-h-screen pb-12">
+<body class="min-h-screen pb-20">
 
     <!-- Header -->
-    <nav class="sticky top-0 z-50 bg-white border-b border-slate-200 px-4 py-3 shadow-sm">
+    <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3">
         <div class="max-w-4xl mx-auto flex justify-between items-center">
-            <h1 class="text-lg font-bold text-rose-600 flex items-center">
-                <i class="fa-solid fa-pills mr-2"></i>ME Reporting
+            <h1 class="text-xl font-bold text-indigo-600 flex items-center">
+                <i class="fa-solid fa-pills mr-2"></i>Medication Error System
             </h1>
-            <div id="syncStatus" class="text-emerald-500 text-[10px] font-bold">
-                <i class="fa-solid fa-cloud-check"></i> Connected to Google Sheet
+            <div id="syncStatus" class="text-slate-400 text-[10px] font-bold uppercase">
+                <i class="fa-solid fa-circle-notch fa-spin mr-1"></i>ตรวจสอบข้อมูล...
             </div>
         </div>
     </nav>
 
     <main class="max-w-2xl mx-auto p-4 space-y-6">
         
-        <!-- Summary Dashboard -->
-        <div class="space-y-2">
-            <div class="flex justify-between items-end px-1">
-                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider">สรุปผลการรายงาน</h2>
-                <span id="currentFilterLabel" class="text-[10px] font-bold text-rose-500 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-100"></span>
-            </div>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                <div class="card p-3 text-center bg-white border-slate-100 shadow-sm">
-                    <p class="text-[9px] text-slate-400 uppercase font-bold">รวมเคส</p>
-                    <p id="statTotal" class="text-lg font-bold text-slate-700">0</p>
+        <!-- Dashboard Statistics -->
+        <div class="space-y-3">
+            <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest px-1">สรุปสถิติตามช่วงเวลาที่เลือก</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div class="card p-4 text-center bg-white border-slate-100">
+                    <p class="text-[10px] text-slate-400 uppercase font-bold">Total</p>
+                    <p id="statTotal" class="text-2xl font-bold text-indigo-600">-</p>
                 </div>
-                <div class="card p-3 text-center bg-emerald-50 border-emerald-100">
-                    <p class="text-[9px] text-emerald-500 uppercase font-bold">NEAR MISS</p>
-                    <p id="statNearMiss" class="text-lg font-bold text-emerald-600">0</p>
+                <div class="card p-4 text-center bg-emerald-50 border-emerald-100">
+                    <p class="text-[10px] text-emerald-600 uppercase font-bold">Near Miss</p>
+                    <p id="statNearMiss" class="text-2xl font-bold text-emerald-700">-</p>
                 </div>
-                <div class="card p-3 text-center bg-amber-50 border-amber-100">
-                    <p class="text-[9px] text-amber-500 uppercase font-bold">ERROR</p>
-                    <p id="statError" class="text-lg font-bold text-amber-600">0</p>
+                <div class="card p-4 text-center bg-amber-50 border-amber-100">
+                    <p class="text-[10px] text-amber-600 uppercase font-bold">No Harm</p>
+                    <p id="statError" class="text-2xl font-bold text-amber-700">-</p>
                 </div>
-                <div class="card p-3 text-center bg-rose-50 border-rose-100">
-                    <p class="text-[9px] text-rose-400 uppercase font-bold">HARM</p>
-                    <p id="statHarm" class="text-lg font-bold text-rose-600">0</p>
+                <div class="card p-4 text-center bg-rose-50 border-rose-100">
+                    <p class="text-[10px] text-rose-600 uppercase font-bold">Harm</p>
+                    <p id="statHarm" class="text-2xl font-bold text-rose-700">-</p>
                 </div>
             </div>
         </div>
 
-        <!-- Reporting Form -->
-        <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-            <h2 class="text-md font-bold mb-6 text-slate-700 flex items-center">
-                <i class="fa-solid fa-plus-circle mr-2 text-rose-500"></i>บันทึกอุบัติการณ์ใหม่
+        <!-- Form Section -->
+        <div class="card p-6 md:p-8 space-y-6 border-t-4 border-t-indigo-500 shadow-xl">
+            <h2 class="text-lg font-bold text-slate-700 flex items-center border-b pb-4">
+                <i class="fa-solid fa-clipboard-list mr-2 text-indigo-500"></i>บันทึกรายงานอุบัติการณ์
             </h2>
             
-            <div class="space-y-5">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-[11px] text-slate-400 mb-1 ml-1 font-bold">วันที่เกิดอุบัติการณ์ *</label>
-                        <input type="date" id="eventDate" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-rose-500/20 text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-[11px] text-slate-400 mb-1 ml-1 font-bold">เลข HN (ถ้ามี)</label>
-                        <input type="text" id="hn" placeholder="ระบุ HN" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-rose-500/20 text-sm">
-                    </div>
-                </div>
-
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                    <label class="block text-[11px] text-slate-400 mb-1 ml-1 font-bold">รายละเอียดเหตุการณ์ *</label>
-                    <textarea id="details" rows="3" placeholder="ระบุยาและเหตุการณ์..." class="w-full px-4 py-3 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-rose-500/20 text-sm"></textarea>
+                    <label class="block text-[11px] text-slate-500 mb-1 ml-1 font-bold">วันที่เกิดเหตุ *</label>
+                    <input type="date" id="eventDate" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-50/50">
                 </div>
-
                 <div>
-                    <label class="block text-[11px] text-slate-400 mb-1 ml-1 font-bold">ระดับความรุนแรง (A-I) *</label>
-                    <select id="severity" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-rose-500/20 text-sm bg-slate-50">
-                        <option value="">-- เลือกความรุนแรง --</option>
-                        <option value="A">ระดับ A: ยังไม่เกิด แต่มีโอกาส</option>
-                        <option value="B">ระดับ B: เกิดแล้ว แต่ไม่ถึงผู้ป่วย</option>
-                        <option value="C">ระดับ C: ถึงตัวผู้ป่วย แต่ไม่เป็นอันตราย</option>
-                        <option value="D">ระดับ D: ถึงตัวผู้ป่วย ต้องติดตามเพิ่ม</option>
-                        <option value="E">ระดับ E: อันตรายชั่วคราว ต้องรักษา</option>
-                        <option value="F">ระดับ F: อันตรายชั่วคราว ต้องแอดมิท</option>
-                        <option value="G">ระดับ G: อันตรายถาวร</option>
-                        <option value="H">ระดับ H: ต้องช่วยชีวิต (Resuscitation)</option>
-                        <option value="I">ระดับ I: เสียชีวิต</option>
+                    <label class="block text-[11px] text-slate-500 mb-1 ml-1 font-bold">เลข HN ผู้ป่วย *</label>
+                    <input type="text" id="hn" placeholder="ระบุ HN" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-50/50">
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-[11px] text-slate-500 mb-1 ml-1 font-bold">ขั้นตอนที่เกิดความคลาดเคลื่อน *</label>
+                    <select id="process" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-50/50">
+                        <option value="">-- เลือกขั้นตอนที่เกิดปัญหา --</option>
+                        <option value="Prescribing">Prescribing: แพทย์สั่งยา (เช่น สั่งยาผิดตัว, เขียน Dose/Route ผิด)</option>
+                        <option value="Transcribing">Transcribing: การคัดลอก (เช่น คีย์ยาเข้าคอมผิด, ลอกลง Kardex ผิด)</option>
+                        <option value="Dispensing">Dispensing: จัดยา/จ่ายยา (เช่น ห้องยาจัดยาผิด, พยาบาลหยิบยาใส่รถผิด)</option>
+                        <option value="Administration">Administration: การบริหารยา (เช่น พยาบาลให้ยาผิดคน, ผิดเวลา, ลืมให้ยา)</option>
                     </select>
                 </div>
-
-                <div>
-                    <label class="block text-[11px] text-slate-400 mb-1 ml-1 font-bold">ผู้บันทึก *</label>
-                    <input type="text" id="reporter" placeholder="ชื่อผู้รายงาน" class="w-full px-4 py-2 rounded-xl border border-slate-200 outline-none focus:ring-2 focus:ring-rose-500/20 text-sm">
-                </div>
-
-                <button onclick="saveError()" id="btnSubmit" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center">
-                    <span id="btnText"><i class="fa-solid fa-save mr-2"></i>บันทึกอุบัติการณ์</span>
-                    <i id="btnLoading" class="fa-solid fa-circle-notch fa-spin hidden ml-2"></i>
-                </button>
-            </div>
-        </div>
-
-        <!-- History Section -->
-        <div class="space-y-4 pt-4 border-t border-slate-200">
-            <div class="flex justify-between items-center px-1">
-                <h2 class="text-sm font-bold text-slate-500">ประวัติในเครื่องนี้</h2>
-                <div class="flex items-center gap-2">
-                    <button onclick="clearAllData()" class="p-1.5 px-3 rounded-lg border border-slate-200 text-[10px] font-bold text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors" title="ล้างข้อมูลทั้งหมด">
-                        <i class="fa-solid fa-trash-can mr-1"></i> ล้างประวัติ
-                    </button>
-                    <select id="filterMonth" onchange="render()" class="px-2 py-1 rounded-lg border border-slate-200 text-[11px] font-bold outline-none">
-                        <option value="all">ทุกเดือน</option>
-                        <option value="0">ม.ค.</option><option value="1">ก.พ.</option><option value="2">มี.ค.</option><option value="3">เม.ย.</option>
-                        <option value="4">พ.ค.</option><option value="5">มิ.ย.</option><option value="6">ก.ค.</option><option value="7">ส.ค.</option>
-                        <option value="8">ก.ย.</option><option value="9">ต.ค.</option><option value="10">พ.ย.</option><option value="11">ธ.ค.</option>
-                    </select>
+                <div class="md:col-span-2">
+                    <label class="block text-[11px] text-slate-500 mb-1 ml-1 font-bold">ชื่อยาที่มีปัญหา *</label>
+                    <input type="text" id="drugName" list="drugList" placeholder="พิมพ์ชื่อยาที่เกิดความคลาดเคลื่อน..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-50/50">
+                    <datalist id="drugList"></datalist>
                 </div>
             </div>
-            <div id="historyList" class="space-y-3"></div>
+
+            <div>
+                <label class="block text-[11px] text-slate-500 mb-1 ml-1 font-bold">ระดับความรุนแรง (A-I) *</label>
+                <select id="severity" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-50/50">
+                    <option value="">-- เลือกระดับความรุนแรงตามผลลัพธ์ --</option>
+                    <optgroup label="Near Miss (เกือบพลาด)">
+                        <option value="A">ระดับ A: มีโอกาสเกิดผิดพลาด (เช่น แพทย์สั่งยาผิดแต่เภสัชกรตรวจพบก่อนคีย์)</option>
+                        <option value="B">ระดับ B: เกิดความผิดพลาดแต่หยุดทัน (เช่น ห้องยาจัดยาผิด แต่พยาบาลพบก่อนนำไปที่เตียง)</option>
+                    </optgroup>
+                    <optgroup label="No Harm (ถึงตัวแต่ไม่บาดเจ็บ)">
+                        <option value="C">ระดับ C: ถึงตัวแต่ไม่บาดเจ็บ (เช่น ให้ยาผิดมื้อ/ผิดตัว แต่ผู้ป่วยไม่เป็นอะไร)</option>
+                        <option value="D">ระดับ D: ถึงตัว ต้องเฝ้าระวังเพิ่ม (เช่น ให้ยาเกินขนาด ต้องเจาะเลือดดูระดับยา/V.S.)</option>
+                    </optgroup>
+                    <optgroup label="Harm (เกิดอันตราย)">
+                        <option value="E">ระดับ E: อันตรายชั่วคราว รักษาเพิ่ม (เช่น เกิดผื่นคันแพ้ยา ต้องฉีด CPM แก้แพ้)</option>
+                        <option value="F">ระดับ F: อันตรายชั่วคราว นอน รพ. นานขึ้น (เช่น เกิดอาการใจสั่นจากยาผิดจนเลื่อนวันกลับบ้าน)</option>
+                        <option value="G">ระดับ G: อันตรายถาวร/พิการ (เช่น ให้ยาผิดจนผู้ป่วยเกิดภาวะไตวายถาวรต้องฟอกไต)</option>
+                        <option value="H">ระดับ H: เกือบเสียชีวิต (เช่น ให้ยา KCL IV Push จนหัวใจหยุดเต้น ต้องปั๊ม CPR)</option>
+                        <option value="I">ระดับ I: เสียชีวิต (เช่น การบริหารยาผิดพลาดเป็นสาเหตุให้ผู้ป่วยเสียชีวิต)</option>
+                    </optgroup>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-[11px] text-slate-500 mb-1 ml-1 font-bold">รายละเอียดเหตุการณ์ *</label>
+                <textarea id="details" rows="3" placeholder="ระบุลำดับเหตุการณ์ และแนวทางการแก้ไขเบื้องต้น..." class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm bg-slate-50/50"></textarea>
+            </div>
+
+            <div>
+                <label class="block text-[11px] text-slate-500 mb-1 ml-1 font-bold">ผู้รายงาน *</label>
+                <input type="text" id="reporter" placeholder="ระบุชื่อผู้บันทึกรายงาน" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm bg-slate-50/50">
+            </div>
+
+            <button onclick="saveError()" id="btnSubmit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center">
+                <i class="fa-solid fa-cloud-arrow-up mr-2"></i>บันทึกรายงานลงระบบ
+            </button>
         </div>
+
+        <!-- Filter Range Control -->
+        <div class="card p-5 space-y-4 border-l-4 border-l-indigo-400">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xs font-bold text-slate-600 uppercase tracking-widest flex items-center">
+                    <i class="fa-solid fa-calendar-range mr-2"></i>ตัวกรองช่วงเวลา (Range Filter)
+                </h3>
+                <button onclick="resetFilters()" class="text-[10px] text-indigo-500 font-bold hover:underline">ล้างตัวกรอง</button>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="text-[10px] text-slate-400 font-bold ml-1 uppercase">ตั้งแต่เดือน/ปี</label>
+                    <div class="flex space-x-1">
+                        <select id="startMonth" onchange="render()" class="w-full text-xs border rounded-lg p-2 font-bold bg-slate-50"></select>
+                        <select id="startYear" onchange="render()" class="w-full text-xs border rounded-lg p-2 font-bold bg-slate-50"></select>
+                    </div>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] text-slate-400 font-bold ml-1 uppercase">ถึงเดือน/ปี</label>
+                    <div class="flex space-x-1">
+                        <select id="endMonth" onchange="render()" class="w-full text-xs border rounded-lg p-2 font-bold bg-slate-50"></select>
+                        <select id="endYear" onchange="render()" class="w-full text-xs border rounded-lg p-2 font-bold bg-slate-50"></select>
+                    </div>
+                </div>
+            </div>
+            <p class="text-[10px] text-slate-400 italic leading-tight">* ตัวอย่าง: เลือก ต.ค. 2568 ถึง เม.ย. 2569 ข้อมูล Dashboard และประวัติด้านล่างจะคำนวณใหม่ทันที</p>
+        </div>
+
+        <!-- History List -->
+        <div id="historyList" class="space-y-4"></div>
 
     </main>
-
-    <!-- Simple Custom Modal for Confirmation -->
-    <div id="confirmModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[200] hidden flex items-center justify-center p-6">
-        <div class="bg-white w-full max-w-xs rounded-3xl p-6 shadow-2xl animate-fade">
-            <h3 class="font-bold text-slate-800 text-center mb-2">ล้างประวัติทั้งหมด?</h3>
-            <p class="text-xs text-slate-500 text-center mb-6">ข้อมูลที่แสดงอยู่ในส่วนประวัติล่างนี้จะถูกลบออกถาวร (เฉพาะในเครื่องนี้)</p>
-            <div class="flex gap-3">
-                <button onclick="closeConfirmModal()" class="flex-1 py-2 text-sm font-bold text-slate-400 bg-slate-50 rounded-xl">ยกเลิก</button>
-                <button onclick="executeClearData()" class="flex-1 py-2 text-sm font-bold text-white bg-rose-500 rounded-xl">ใช่, ลบเลย</button>
-            </div>
-        </div>
-    </div>
 
     <div id="alertContainer" class="fixed top-5 left-4 right-4 z-[110] flex flex-col space-y-2 pointer-events-none"></div>
 
     <script>
-        /**
-         * -------------------------------------------------------------------------
-         * ส่วนการตั้งค่า (CONFIG): แก้ไขลิงก์ของคุณที่นี่เพียงครั้งเดียว
-         * -------------------------------------------------------------------------
-         */
         const CONFIG = {
-            scriptUrl: "https://script.google.com/macros/s/AKfycbzUEsOpWdKR3XulBzxJDy02BOoy9GpWJ_mKU5q3Wx975J3buBhfEhTmMNAt7a_FpcnefA/exec" // ลิงก์จาก Apps Script (https://script.google.com/...)
+            scriptUrl: "https://script.google.com/macros/s/AKfycbymRwhneDoq2c7spuZVQ9MWB1Nv7igtnMEpi_jrL-Em0nXzE4_a5n22ecAYIIKuUCOG7w/exec" // วาง Web App URL จาก Google Apps Script
         };
-        /** ------------------------------------------------------------------------- */
 
-        let meRecords = JSON.parse(localStorage.getItem('me_records')) || [];
+        const MONTHS = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+        let allRecords = [];
 
-        function init() {
-            document.getElementById('eventDate').valueAsDate = new Date();
-            document.getElementById('filterMonth').value = new Date().getMonth();
+        async function fetchData() {
+            if (!CONFIG.scriptUrl) {
+                document.getElementById('historyList').innerHTML = '<div class="card p-10 text-center text-slate-400">กรุณาตั้งค่า Script URL เพื่อเชื่อมต่อฐานข้อมูล</div>';
+                return;
+            }
+            try {
+                document.getElementById('syncStatus').innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1"></i>กำลังซิงค์...';
+                const response = await fetch(CONFIG.scriptUrl);
+                allRecords = await response.json();
+                
+                updateDrugSuggestions();
+                initFilterOptions();
+                render();
+                
+                document.getElementById('syncStatus').innerHTML = '<i class="fa-solid fa-check-circle mr-1 text-emerald-500"></i>ข้อมูลล่าสุด';
+            } catch (e) {
+                document.getElementById('syncStatus').innerHTML = '<i class="fa-solid fa-exclamation-triangle mr-1 text-rose-500"></i>การเชื่อมต่อผิดพลาด';
+            }
+        }
+
+        function initFilterOptions() {
+            const startM = document.getElementById('startMonth');
+            const endM = document.getElementById('endMonth');
+            const startY = document.getElementById('startYear');
+            const endY = document.getElementById('endYear');
+
+            // Populate Months
+            const monthOptions = MONTHS.map((m, i) => `<option value="${i}">${m}</option>`).join('');
+            startM.innerHTML = monthOptions;
+            endM.innerHTML = monthOptions;
+
+            // Populate Years (จากข้อมูลที่มี หรือบวกลบ 5 ปีจากปัจจุบัน)
+            const currentYear = new Date().getFullYear();
+            let years = [...new Set(allRecords.map(r => new Date(r.eventDate).getFullYear()))].filter(y => !isNaN(y));
+            if (years.length === 0) years = [currentYear];
+            
+            // เพิ่มปีให้ครอบคลุมเผื่ออนาคต/อดีต
+            const minYear = Math.min(...years, currentYear - 1);
+            const maxYear = Math.max(...years, currentYear + 1);
+            
+            let yearOptions = '';
+            for (let y = minYear; y <= maxYear; y++) {
+                yearOptions += `<option value="${y}">พ.ศ. ${y + 543}</option>`;
+            }
+            startY.innerHTML = yearOptions;
+            endY.innerHTML = yearOptions;
+
+            // Set Default (เดือนปัจจุบัน)
+            startM.value = "0"; // เริ่มที่ ม.ค. ปีปัจจุบัน
+            startY.value = currentYear;
+            endM.value = "11"; // สิ้นสุดที่ ธ.ค. ปีปัจจุบัน
+            endY.value = currentYear;
+        }
+
+        function resetFilters() {
+            initFilterOptions();
             render();
+        }
+
+        function render() {
+            const list = document.getElementById('historyList');
+            
+            // ดึงค่าจากตัวกรองช่วงเวลา
+            const sM = parseInt(document.getElementById('startMonth').value);
+            const sY = parseInt(document.getElementById('startYear').value);
+            const eM = parseInt(document.getElementById('endMonth').value);
+            const eY = parseInt(document.getElementById('endYear').value);
+
+            // สร้าง Date object สำหรับเปรียบเทียบ (วันแรกของเดือนเริ่ม - วันสุดท้ายของเดือนจบ)
+            const startDate = new Date(sY, sM, 1);
+            const endDate = new Date(eY, eM + 1, 0, 23, 59, 59);
+
+            let filtered = allRecords.filter(r => {
+                const rDate = new Date(r.eventDate);
+                return rDate >= startDate && rDate <= endDate;
+            });
+
+            // Update Dashboard
+            updateDashboard(filtered);
+
+            list.innerHTML = '';
+            if (filtered.length === 0) {
+                list.innerHTML = '<div class="text-center py-20 text-slate-400 italic text-sm animate-fade">ไม่พบข้อมูลในช่วงเวลาที่เลือก</div>';
+                return;
+            }
+
+            filtered.sort((a,b) => b.id - a.id).forEach(r => {
+                const card = document.createElement('div');
+                card.className = `card p-5 animate-fade border-l-8 ${getSevColor(r.severity)}`;
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <span class="text-[10px] font-bold text-slate-400">${new Date(r.eventDate).toLocaleDateString('th-TH')}</span>
+                            <h3 class="text-sm font-bold text-indigo-900">HN: ${r.hn} | ${r.drugName}</h3>
+                        </div>
+                        <span class="severity-badge ${getSevBadge(r.severity)}">LEVEL ${r.severity}</span>
+                    </div>
+                    <div class="space-y-1">
+                        <div class="text-[10px] font-bold text-indigo-500 uppercase italic flex items-center">
+                            <i class="fa-solid fa-stethoscope mr-1"></i>${r.process}
+                        </div>
+                        <p class="text-sm text-slate-600 leading-relaxed">${r.details}</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-50 flex justify-between items-center text-[10px] text-slate-400">
+                        <span>ผู้รายงาน: ${r.reporter}</span>
+                        <i class="fa-solid fa-user-nurse"></i>
+                    </div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function updateDashboard(data) {
+            let stats = { total: data.length, ab: 0, cd: 0, ei: 0 };
+            data.forEach(r => {
+                const s = r.severity;
+                if (['A', 'B'].includes(s)) stats.ab++;
+                else if (['C', 'D'].includes(s)) stats.cd++;
+                else if (['E', 'F', 'G', 'H', 'I'].includes(s)) stats.ei++;
+            });
+
+            document.getElementById('statTotal').innerText = stats.total;
+            document.getElementById('statNearMiss').innerText = stats.ab;
+            document.getElementById('statError').innerText = stats.cd;
+            document.getElementById('statHarm').innerText = stats.ei;
+            
+            // Trigger animation
+            ['statTotal', 'statNearMiss', 'statError', 'statHarm'].forEach(id => {
+                const el = document.getElementById(id);
+                el.classList.remove('animate-fade');
+                void el.offsetWidth;
+                el.classList.add('animate-fade');
+            });
+        }
+
+        function updateDrugSuggestions() {
+            const list = document.getElementById('drugList');
+            const drugs = [...new Set(allRecords.map(r => r.drugName))].filter(Boolean);
+            list.innerHTML = '';
+            drugs.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d;
+                list.appendChild(opt);
+            });
         }
 
         async function saveError() {
@@ -200,120 +319,47 @@
                 id: Date.now(),
                 eventDate: document.getElementById('eventDate').value,
                 hn: document.getElementById('hn').value.trim(),
+                process: document.getElementById('process').value,
+                drugName: document.getElementById('drugName').value.trim(),
                 details: document.getElementById('details').value.trim(),
                 severity: document.getElementById('severity').value,
                 reporter: document.getElementById('reporter').value.trim()
             };
 
-            if (!data.eventDate || !data.details || !data.severity || !data.reporter) {
-                return showAlert('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน', 'error');
-            }
+            if (Object.values(data).some(v => !v)) return showAlert('กรุณากรอกข้อมูลให้ครบทุกช่อง', 'error');
 
             const btn = document.getElementById('btnSubmit');
-            const loader = document.getElementById('btnLoading');
-            btn.disabled = true; 
-            loader.classList.remove('hidden');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>กำลังบันทึก...';
 
             try {
-                // 1. บันทึกในเครื่อง (Local Storage)
-                meRecords.unshift(data);
-                localStorage.setItem('me_records', JSON.stringify(meRecords));
-
-                // 2. ส่งไป Google Sheets (Cloud)
-                if (CONFIG.scriptUrl && CONFIG.scriptUrl.startsWith("http")) {
-                    await fetch(CONFIG.scriptUrl, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data)
-                    });
-                }
-
-                render();
+                await fetch(CONFIG.scriptUrl, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
+                showAlert('บันทึกสำเร็จ!', 'success');
                 resetForm();
-                showAlert('บันทึกข้อมูลเรียบร้อยแล้ว!', 'success');
+                setTimeout(fetchData, 1500);
             } catch (e) {
-                console.error(e);
-                showAlert('บันทึกในเครื่องแล้ว แต่ส่งไป Cloud ไม่สำเร็จ', 'error');
+                showAlert('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
             } finally {
-                btn.disabled = false; 
-                loader.classList.add('hidden');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-cloud-arrow-up mr-2"></i>บันทึกรายงานลงระบบ';
             }
         }
 
-        function resetForm() {
-            ['hn', 'details', 'severity', 'reporter'].forEach(id => document.getElementById(id).value = '');
-            document.getElementById('eventDate').valueAsDate = new Date();
+        function getSevColor(s) {
+            if (['A', 'B'].includes(s)) return 'border-emerald-400';
+            if (['C', 'D'].includes(s)) return 'border-amber-400';
+            return 'border-rose-400';
         }
 
-        function render() {
-            const list = document.getElementById('historyList');
-            const selMonth = document.getElementById('filterMonth').value;
-            list.innerHTML = '';
-            
-            const filtered = meRecords.filter(r => {
-                if (selMonth === 'all') return true;
-                return new Date(r.eventDate).getMonth().toString() === selMonth;
-            });
-
-            // Update Stats
-            let a_b = 0, c_d = 0, e_i = 0;
-            filtered.forEach(r => {
-                if (['A', 'B'].includes(r.severity)) a_b++;
-                else if (['C', 'D'].includes(r.severity)) c_d++;
-                else e_i++;
-            });
-
-            document.getElementById('statTotal').innerText = filtered.length;
-            document.getElementById('statNearMiss').innerText = a_b;
-            document.getElementById('statError').innerText = c_d;
-            document.getElementById('statHarm').innerText = e_i;
-
-            if (filtered.length === 0) {
-                list.innerHTML = `<div class="text-center py-6 text-slate-300 italic text-xs">ไม่มีประวัติการรายงาน</div>`;
-            }
-            
-            filtered.forEach(r => {
-                const card = document.createElement('div');
-                card.className = 'card p-4 animate-fade border-slate-100 shadow-sm mb-3';
-                card.innerHTML = `
-                    <div class="flex justify-between items-start mb-2">
-                        <span class="text-[10px] font-bold text-slate-400">${new Date(r.eventDate).toLocaleDateString('th-TH')}</span>
-                        <span class="severity-badge ${getSeverityClass(r.severity)}">LEVEL ${r.severity}</span>
-                    </div>
-                    <p class="text-sm text-slate-700 font-bold mb-1">${r.hn ? 'HN: '+r.hn : 'ไม่ระบุ HN'}</p>
-                    <p class="text-sm text-slate-600 bg-slate-50 p-3 rounded-xl mb-2 border-l-2 border-slate-200">${r.details}</p>
-                    <div class="flex justify-between text-[10px] text-slate-400 font-bold">
-                        <span>รายงานโดย: ${r.reporter}</span>
-                    </div>
-                `;
-                list.appendChild(card);
-            });
-        }
-
-        // --- Clear Data Logic ---
-        function clearAllData() {
-            document.getElementById('confirmModal').classList.remove('hidden');
-            document.getElementById('confirmModal').classList.add('flex');
-        }
-
-        function closeConfirmModal() {
-            document.getElementById('confirmModal').classList.add('hidden');
-            document.getElementById('confirmModal').classList.remove('flex');
-        }
-
-        function executeClearData() {
-            meRecords = [];
-            localStorage.removeItem('me_records');
-            render();
-            closeConfirmModal();
-            showAlert('ล้างประวัติในเครื่องเรียบร้อยแล้ว', 'success');
-        }
-
-        function getSeverityClass(s) {
+        function getSevBadge(s) {
             if (['A', 'B'].includes(s)) return 'bg-emerald-100 text-emerald-600';
             if (['C', 'D'].includes(s)) return 'bg-amber-100 text-amber-600';
             return 'bg-rose-100 text-rose-600';
+        }
+
+        function resetForm() {
+            ['hn', 'process', 'drugName', 'details', 'severity', 'reporter'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('eventDate').valueAsDate = new Date();
         }
 
         function showAlert(msg, type) {
@@ -325,7 +371,10 @@
             setTimeout(() => div.remove(), 4000);
         }
 
-        window.onload = init;
+        window.onload = () => {
+            document.getElementById('eventDate').valueAsDate = new Date();
+            fetchData();
+        };
     </script>
 </body>
 </html>
