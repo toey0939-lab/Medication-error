@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ME System - Medication Error Reporting</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap');
+        body { font-family: 'Kanit', sans-serif; background-color: #f1f5f9; color: #1e293b; }
+        .card { background: #ffffff; border-radius: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; }
+        .severity-badge { padding: 4px 10px; border-radius: 8px; font-size: 11px; font-weight: bold; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade { animation: fadeIn 0.3s ease-out forwards; }
+        input:focus, select:focus, textarea:focus { border-color: #4f46e5; outline: none; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+        .guide-box { background-color: #f0f7ff; border-left: 5px solid #3b82f6; padding: 16px; border-radius: 12px; font-size: 14px; color: #1e40af; line-height: 1.6; }
+        #adminModal { display: none; }
+        .modal-active { display: flex !important; animation: fadeIn 0.3s ease-out; }
+        .stat-card { transition: all 0.3s ease; }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        
+        /* สไตล์เพิ่มเติมสำหรับ Datalist */
+        datalist { background-color: white; }
+    </style>
+</head>
+<body class="min-h-screen pb-12">
+
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 py-3">
+        <div class="max-w-5xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold text-indigo-600 flex items-center">
+                <i class="fa-solid fa-file-medical mr-2 text-2xl"></i>
+                <span>ME System</span>
+            </h1>
+            <div class="flex items-center space-x-3">
+                <div id="syncStatus" class="text-[10px] font-bold text-slate-400">
+                    <i class="fa-solid fa-circle-notch fa-spin mr-1"></i>เช็คสถานะ...
+                </div>
+                <button onclick="toggleAdmin()" id="adminToggleBtn" class="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 hover:bg-slate-50 transition-all flex items-center bg-white shadow-sm">
+                    <i class="fa-solid fa-lock mr-2"></i>Admin
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-4xl mx-auto p-4 mt-2">
+        
+        <!-- ================= USER VIEW (เจ้าหน้าที่) ================= -->
+        <section id="userView" class="animate-fade space-y-6">
+            <div class="card p-6 md:p-8 space-y-6 border-t-[10px] border-t-indigo-600">
+                <div class="border-b pb-4 flex justify-between items-end">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800">บันทึกความคลาดเคลื่อน</h2>
+                        <p class="text-sm text-slate-500 mt-1">เจ้าหน้าที่กรอกข้อมูลเฉพาะเหตุการณ์</p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">วันที่เกิดเหตุ *</label>
+                        <input type="date" id="eventDate" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">เลข HN ผู้ป่วย *</label>
+                        <input type="text" id="hn" placeholder="เช่น 6600123" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-mono">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">ขั้นตอนที่เกิด *</label>
+                        <select id="process" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50">
+                            <option value="">-- เลือกขั้นตอน --</option>
+                            <option value="Prescribing">Prescribing : สั่งยา</option>
+                            <option value="Transcribing">Transcribing : คัดลอก/บันทึก</option>
+                            <option value="Dispensing">Dispensing : จัด/จ่ายยา</option>
+                            <option value="Administration">Administration : บริหารยา</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">ชื่อยาที่มีปัญหา *</label>
+                        <input type="text" id="drugName" list="drugHistory" placeholder="พิมพ์ชื่อยา (ระบบจะช่วยจำชื่อยาที่เคยกรอก)" class="w-full px-4 py-3 rounded-xl border border-slate-200">
+                        <datalist id="drugHistory">
+                            <!-- รายชื่อยาจากประวัติจะแสดงที่นี่ -->
+                        </datalist>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">ระดับความรุนแรง (Severity) *</label>
+                    <select id="severity" onchange="updateSeverityGuide()" class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 font-bold text-indigo-600">
+                        <option value="">-- เลือกความรุนแรง A-I --</option>
+                        <option value="A">ระดับ A : มีโอกาสเกิดความคลาดเคลื่อน</option>
+                        <option value="B">ระดับ B : เกิดขึ้นแต่ไม่ถึงตัวผู้ป่วย</option>
+                        <option value="C">ระดับ C : ถึงผู้ป่วยแต่ไม่เกิดอันตราย</option>
+                        <option value="D">ระดับ D : ถึงผู้ป่วย ต้องเฝ้าระวังเพิ่ม</option>
+                        <option value="E">ระดับ E : อันตรายชั่วคราว ต้องรักษาเพิ่ม</option>
+                        <option value="F">ระดับ F : อันตรายชั่วคราว ต้องนอน รพ. นานขึ้น</option>
+                        <option value="G">ระดับ G : อันตรายถาวร</option>
+                        <option value="H">ระดับ H : เกือบเสียชีวิต</option>
+                        <option value="I">ระดับ I : เสียชีวิต</option>
+                    </select>
+                </div>
+
+                <!--Severity Guide Box พร้อมตัวอย่าง -->
+                <div id="severityGuide" class="hidden guide-box animate-fade"></div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">รายละเอียดเหตุการณ์</label>
+                    <textarea id="details" rows="4" placeholder="ระบุสิ่งที่เกิดขึ้นโดยละเอียด..." class="w-full px-4 py-3 rounded-xl border border-slate-200"></textarea>
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">ชื่อผู้รายงาน *</label>
+                    <input type="text" id="reporter" placeholder="ชื่อ-นามสกุล" class="w-full px-4 py-3 rounded-xl border border-slate-200">
+                </div>
+
+                <button onclick="saveReport()" id="btnSubmit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-paper-plane mr-2"></i>บันทึกข้อมูลรายงาน
+                </button>
+            </div>
+        </section>
+
+        <!-- ================= ADMIN VIEW ================= -->
+        <section id="adminView" class="hidden space-y-6 animate-fade">
+            <div class="card p-6 border-l-[10px] border-l-indigo-600">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="font-bold text-slate-800 text-lg flex items-center">
+                        <i class="fa-solid fa-chart-pie mr-2 text-indigo-500"></i>
+                        สรุปความเสี่ยงรายเดือน
+                    </h3>
+                    <button onclick="fetchData()" class="text-indigo-600 font-bold text-xs bg-indigo-50 px-3 py-1.5 rounded-lg">
+                        <i class="fa-solid fa-rotate mr-1"></i>อัปเดตข้อมูล
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                    <div class="flex space-x-2">
+                        <select id="startMonth" onchange="renderAdmin()" class="flex-1 text-sm border rounded-xl p-3 bg-slate-50"></select>
+                        <select id="startYear" onchange="renderAdmin()" class="flex-1 text-sm border rounded-xl p-3 bg-slate-50"></select>
+                    </div>
+                    <div class="flex space-x-2">
+                        <select id="endMonth" onchange="renderAdmin()" class="flex-1 text-sm border rounded-xl p-3 bg-slate-50"></select>
+                        <select id="endYear" onchange="renderAdmin()" class="flex-1 text-sm border rounded-xl p-3 bg-slate-50"></select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                    <div class="stat-card bg-indigo-50 p-5 rounded-3xl text-center border border-indigo-100">
+                        <p class="text-[10px] text-indigo-500 font-bold uppercase mb-1">ทั้งหมด</p>
+                        <p id="statTotal" class="text-3xl font-black text-indigo-700">0</p>
+                    </div>
+                    <div class="stat-card bg-emerald-50 p-5 rounded-3xl text-center border border-emerald-100">
+                        <p class="text-[10px] text-emerald-500 font-bold uppercase mb-1">ลงระบบแล้ว</p>
+                        <p id="statDone" class="text-3xl font-black text-emerald-700">0</p>
+                    </div>
+                    <div class="stat-card bg-rose-50 p-5 rounded-3xl text-center border border-rose-100">
+                        <p class="text-[10px] text-rose-500 font-bold uppercase mb-1">ค้างลงระบบ</p>
+                        <p id="statPending" class="text-3xl font-black text-rose-700">0</p>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">แยกตามระดับความรุนแรง</p>
+                    <div id="severityStats" class="grid grid-cols-3 sm:grid-cols-9 gap-2"></div>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex items-center justify-between px-2">
+                    <div class="flex space-x-4 items-center">
+                        <h3 class="font-bold text-slate-700">รายการข้อมูล</h3>
+                        <div class="flex bg-slate-200 p-1 rounded-xl text-[10px] font-bold">
+                            <button id="tabPending" onclick="switchAdminTab('pending')" class="px-3 py-1.5 rounded-lg bg-white shadow-sm text-indigo-600 transition-all">รอลงระบบ</button>
+                            <button id="tabDone" onclick="switchAdminTab('done')" class="px-3 py-1.5 rounded-lg text-slate-500 transition-all">ลงระบบแล้ว</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="adminList" class="space-y-4"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Admin Login Modal -->
+    <div id="adminModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[200] items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-[2rem] p-8 shadow-2xl space-y-6">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <i class="fa-solid fa-shield-halved text-2xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-slate-800">Admin Login</h3>
+                <p class="text-sm text-slate-500 italic">เฉพาะผู้ดูแลระบบเท่านั้น</p>
+            </div>
+            <input type="password" id="adminPass" placeholder="รหัสผ่าน" class="w-full px-5 py-3 rounded-xl border border-slate-200 text-center text-lg tracking-[0.5em] font-bold">
+            <div class="flex space-x-3">
+                <button onclick="closeAdmin()" class="flex-1 py-3 text-slate-400 font-bold text-sm">ปิด</button>
+                <button onclick="verifyAdmin()" class="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-bold shadow-lg active:scale-95 transition-all">ยืนยัน</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toastContainer" class="fixed bottom-10 left-4 right-4 z-[300] pointer-events-none flex flex-col items-center space-y-2"></div>
+
+    <script>
+        const APP_CONFIG = {
+            scriptUrl: "https://script.google.com/macros/s/AKfycbxR-2BX4eB9MwoyWOK7iSW23LeB63kEKqqqsxZ8jDpBjUuwHrE_CIgGpy40ihSlmUIHQw/exec", 
+            adminPassword: "med1234"
+        };
+
+        const MONTHS_TH = ["มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+        const SEVERITY_LIST = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
+        
+        let records = [];
+        let isModeAdmin = false;
+        let activeAdminTab = 'pending';
+
+        // --- Core Functions ---
+
+        async function fetchData() {
+            try {
+                document.getElementById('syncStatus').innerHTML = '<i class="fa-solid fa-sync fa-spin mr-1"></i>กำลังดึงข้อมูล...';
+                const res = await fetch(APP_CONFIG.scriptUrl);
+                records = await res.json();
+                document.getElementById('syncStatus').innerHTML = '<i class="fa-solid fa-check-circle text-emerald-500 mr-1"></i>อัปเดตแล้ว';
+                if (isModeAdmin) renderAdmin();
+            } catch (e) {
+                document.getElementById('syncStatus').innerHTML = '<i class="fa-solid fa-exclamation-triangle text-amber-500 mr-1"></i>เชื่อมต่อไม่ได้';
+            }
+        }
+
+        async function saveReport() {
+            const btn = document.getElementById('btnSubmit');
+            const data = {
+                id: Date.now(),
+                eventDate: document.getElementById('eventDate').value,
+                hn: document.getElementById('hn').value.trim(),
+                process: document.getElementById('process').value,
+                drugName: document.getElementById('drugName').value.trim(),
+                details: document.getElementById('details').value.trim(),
+                severity: document.getElementById('severity').value,
+                reporter: document.getElementById('reporter').value.trim(),
+                hrmsStatus: "FALSE" 
+            };
+
+            if (!data.eventDate || !data.hn || !data.process || !data.drugName || !data.severity || !data.reporter) {
+                return showToast('กรุณากรอกข้อมูลที่มีเครื่องหมาย * ให้ครบถ้วน', 'error');
+            }
+
+            // บันทึกประวัติยาลง LocalStorage
+            saveDrugToHistory(data.drugName);
+            localStorage.setItem('persistent_reporter', data.reporter);
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-2"></i>กำลังบันทึก...';
+
+            try {
+                await fetch(APP_CONFIG.scriptUrl, { 
+                    method: 'POST', 
+                    mode: 'no-cors', 
+                    body: JSON.stringify(data) 
+                });
+                
+                showToast('บันทึกข้อมูลเรียบร้อยแล้ว!', 'success');
+                // Reset form
+                document.getElementById('details').value = '';
+                document.getElementById('hn').value = '';
+                document.getElementById('drugName').value = '';
+                document.getElementById('severity').value = '';
+                document.getElementById('severityGuide').classList.add('hidden');
+                
+                fetchData();
+                loadDrugHistory(); // อัปเดตรายการแนะนำยา
+            } catch (e) {
+                showToast('เกิดข้อผิดพลาดในการส่งข้อมูล', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane mr-2"></i>บันทึกข้อมูลรายงาน';
+            }
+        }
+
+        // --- NEW: Drug History Functions ---
+        function saveDrugToHistory(name) {
+            let history = JSON.parse(localStorage.getItem('drug_history') || '[]');
+            if (!history.includes(name)) {
+                history.push(name);
+                // เก็บแค่ 50 รายการล่าสุด
+                if (history.length > 50) history.shift();
+                localStorage.setItem('drug_history', JSON.stringify(history));
+            }
+        }
+
+        function loadDrugHistory() {
+            const history = JSON.parse(localStorage.getItem('drug_history') || '[]');
+            const list = document.getElementById('drugHistory');
+            list.innerHTML = history.map(name => `<option value="${name}">`).join('');
+        }
+
+        // --- View & Dashboard Logic (คงเดิม) ---
+
+        function renderAdmin() {
+            const list = document.getElementById('adminList');
+            const sM = parseInt(document.getElementById('startMonth').value);
+            const sY = parseInt(document.getElementById('startYear').value);
+            const eM = parseInt(document.getElementById('endMonth').value);
+            const eY = parseInt(document.getElementById('endYear').value);
+
+            const startDate = new Date(sY, sM, 1);
+            const endDate = new Date(eY, eM + 1, 0, 23, 59, 59);
+            
+            const periodRecords = records.filter(r => {
+                const d = new Date(r.eventDate);
+                return d >= startDate && d <= endDate;
+            });
+
+            updateDashboard(periodRecords);
+
+            const isDoneTarget = activeAdminTab === 'done';
+            const displayList = periodRecords.filter(r => {
+                const status = String(r.hrmsStatus).toUpperCase();
+                return isDoneTarget ? (status === 'TRUE') : (status !== 'TRUE');
+            });
+
+            list.innerHTML = displayList.length ? '' : `<div class="text-center py-12 text-slate-400 bg-white rounded-3xl border-2 border-dashed border-slate-100 italic">ไม่มีรายการในช่วงเวลานี้</div>`;
+            
+            displayList.sort((a,b) => b.id - a.id).forEach(r => {
+                const card = document.createElement('div');
+                card.className = "card p-5 animate-fade border-l-[8px] " + getSeverityColor(r.severity);
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-3">
+                        <div>
+                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${new Date(r.eventDate).toLocaleDateString('th-TH', {day:'numeric', month:'short', year:'2-digit'})}</p>
+                            <h4 class="font-bold text-slate-800 text-lg">HN: ${r.hn}</h4>
+                        </div>
+                        <span class="severity-badge ${getSeverityBadgeClass(r.severity)}">ระดับ ${r.severity}</span>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl text-sm mb-4 border border-slate-100">
+                        <p class="font-bold text-indigo-600 mb-1">${r.drugName}</p>
+                        <p class="text-slate-600 leading-relaxed">${r.details || '<span class="italic text-slate-400">ไม่มีรายละเอียด</span>'}</p>
+                        <div class="mt-3 pt-2 border-t border-slate-200 flex justify-between items-center text-[10px] font-bold">
+                            <span class="text-slate-400">ขั้นตอน: ${r.process}</span>
+                            <span class="text-indigo-400">โดย: ${r.reporter}</span>
+                        </div>
+                    </div>
+                    ${activeAdminTab === 'pending' ? `
+                    <button onclick="markAsHrms('${r.id}', event)" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-xl shadow-md transition-all active:scale-95 text-sm">
+                        <i class="fa-solid fa-check-to-slot mr-2"></i>ยืนยันลงระบบ HRMS แล้ว
+                    </button>` : `<div class="w-full bg-slate-100 text-slate-500 py-3 rounded-xl text-center text-xs font-bold"><i class="fa-solid fa-circle-check mr-2"></i>บันทึกแล้ว</div>`}
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function updateDashboard(data) {
+            const total = data.length;
+            const done = data.filter(r => String(r.hrmsStatus).toUpperCase() === 'TRUE').length;
+            const pending = total - done;
+
+            document.getElementById('statTotal').innerText = total;
+            document.getElementById('statDone').innerText = done;
+            document.getElementById('statPending').innerText = pending;
+
+            const sevContainer = document.getElementById('severityStats');
+            const counts = {};
+            SEVERITY_LIST.forEach(s => counts[s] = 0);
+            data.forEach(r => { if(counts[r.severity] !== undefined) counts[r.severity]++; });
+
+            sevContainer.innerHTML = SEVERITY_LIST.map(s => `
+                <div class="flex flex-col items-center bg-white border border-slate-100 p-2 rounded-xl">
+                    <span class="text-[9px] font-bold text-slate-400 mb-1">ระดับ ${s}</span>
+                    <span class="text-sm font-black ${counts[s] > 0 ? 'text-indigo-600' : 'text-slate-300'}">${counts[s]}</span>
+                </div>
+            `).join('');
+        }
+
+        function switchAdminTab(tab) {
+            activeAdminTab = tab;
+            document.getElementById('tabPending').className = tab === 'pending' ? "px-3 py-1.5 rounded-lg bg-white shadow-sm text-indigo-600 transition-all" : "px-3 py-1.5 rounded-lg text-slate-500 transition-all";
+            document.getElementById('tabDone').className = tab === 'done' ? "px-3 py-1.5 rounded-lg bg-white shadow-sm text-indigo-600 transition-all" : "px-3 py-1.5 rounded-lg text-slate-500 transition-all";
+            renderAdmin();
+        }
+
+        // --- NEW: Severity Guide with Examples ---
+        function updateSeverityGuide() {
+            const val = document.getElementById('severity').value;
+            const box = document.getElementById('severityGuide');
+            
+            const SEVERITY_DATA = {
+                'A': { desc: 'มีโอกาสเกิดความคลาดเคลื่อน แต่ยังไม่เกิด', ex: 'เช่น พบใบสั่งยาเขียนชื่อยาผิดแต่พยาบาลทักท้วงก่อนจัดยา' },
+                'B': { desc: 'เกิดความคลาดเคลื่อนแล้ว แต่ยังไม่ถึงตัวผู้ป่วย', ex: 'เช่น ห้องยาจัดยาผิดซอง แต่พยาบาลตรวจสอบพบก่อนนำไปให้ผู้ป่วย' },
+                'C': { desc: 'ถึงผู้ป่วยแล้ว แต่ไม่ทำให้ผู้ป่วยได้รับอันตราย', ex: 'เช่น ผู้ป่วยกินยาผิดมื้อ (สลับเช้า/เย็น) แต่ไม่มีอาการผิดปกติ' },
+                'D': { desc: 'ถึงผู้ป่วย ทำให้ต้องเฝ้าระวังเพิ่ม', ex: 'เช่น ให้ยาเกินขนาดเล็กน้อย ต้องเจาะเลือดตรวจระดับยาหรือวัด V/S ถี่ขึ้น' },
+                'E': { desc: 'อันตรายชั่วคราว ต้องได้รับการรักษา', ex: 'เช่น ให้ยาผิดจนผู้ป่วยความดันตก ต้องให้น้ำเกลือหรือยาแก้แพ้' },
+                'F': { desc: 'อันตรายชั่วคราว ต้องนอน รพ. นานขึ้น', ex: 'เช่น เกิดผลข้างเคียงจากยาผิด จนต้องเลื่อนวันจำหน่ายผู้ป่วยออกไป' },
+                'G': { desc: 'อันตรายถาวรต่อผู้ป่วย', ex: 'เช่น ให้ยาผิดจนเกิดภาวะไตวายเรื้อรัง หรือสูญเสียการได้ยินถาวร' },
+                'H': { desc: 'เกือบเสียชีวิต (Near Miss Death)', ex: 'เช่น แพ้ยารุนแรงจนหยุดหายใจ ต้องปั๊มหัวใจ (CPR)' },
+                'I': { desc: 'เสียชีวิต', ex: 'เช่น เสียชีวิตจากการได้รับยาผิดขนาดหรือผิดประเภทโดยตรง' }
+            };
+
+            if (val && SEVERITY_DATA[val]) {
+                box.innerHTML = `
+                    <div class="font-bold mb-1"><i class="fa-solid fa-circle-info mr-2"></i> ${SEVERITY_DATA[val].desc}</div>
+                    <div class="text-xs italic opacity-80 mt-1 border-t border-blue-200 pt-1">${SEVERITY_DATA[val].ex}</div>
+                `;
+                box.classList.remove('hidden');
+            } else {
+                box.classList.add('hidden');
+            }
+        }
+
+        // --- Utilities & UI ---
+
+        function getSeverityColor(s) {
+            if (['A','B'].includes(s)) return 'border-l-emerald-400';
+            if (['C','D'].includes(s)) return 'border-l-amber-400';
+            return 'border-l-rose-400';
+        }
+
+        function getSeverityBadgeClass(s) {
+            if (['A','B'].includes(s)) return 'bg-emerald-100 text-emerald-600';
+            if (['C','D'].includes(s)) return 'bg-amber-100 text-amber-600';
+            return 'bg-rose-100 text-rose-600';
+        }
+
+        function toggleAdmin() {
+            if (isModeAdmin) {
+                isModeAdmin = false;
+                document.getElementById('adminView').classList.add('hidden');
+                document.getElementById('userView').classList.remove('hidden');
+                document.getElementById('adminToggleBtn').innerHTML = '<i class="fa-solid fa-lock mr-2"></i>Admin';
+            } else {
+                document.getElementById('adminModal').classList.add('modal-active');
+                document.getElementById('adminPass').focus();
+            }
+        }
+
+        function verifyAdmin() {
+            if (document.getElementById('adminPass').value === APP_CONFIG.adminPassword) {
+                isModeAdmin = true;
+                closeAdmin();
+                document.getElementById('userView').classList.add('hidden');
+                document.getElementById('adminView').classList.remove('hidden');
+                document.getElementById('adminToggleBtn').innerHTML = '<i class="fa-solid fa-xmark mr-2"></i>ออกหน้า Admin';
+                renderAdmin();
+            } else {
+                showToast('รหัสผ่านไม่ถูกต้อง', 'error');
+            }
+        }
+
+        function closeAdmin() {
+            document.getElementById('adminModal').classList.remove('modal-active');
+            document.getElementById('adminPass').value = '';
+        }
+
+        function showToast(m, t) {
+            const d = document.createElement('div');
+            d.className = `p-4 rounded-2xl text-white text-center font-bold shadow-2xl animate-fade pointer-events-auto ${t==='success'?'bg-emerald-500':'bg-rose-500'}`;
+            d.innerHTML = m;
+            document.getElementById('toastContainer').appendChild(d);
+            setTimeout(() => { d.style.opacity='0'; setTimeout(()=>d.remove(),400); }, 3000);
+        }
+
+        function initFilters() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth();
+            const monthOptions = MONTHS_TH.map((m, i) => `<option value="${i}">${m}</option>`).join('');
+            ['startMonth', 'endMonth'].forEach(id => document.getElementById(id).innerHTML = monthOptions);
+            let yearOptions = '';
+            for (let y = year - 1; y <= year + 1; y++) {
+                yearOptions += `<option value="${y}">พ.ศ. ${y + 543}</option>`;
+            }
+            ['startYear', 'endYear'].forEach(id => document.getElementById(id).innerHTML = yearOptions);
+            document.getElementById('startMonth').value = month;
+            document.getElementById('endMonth').value = month;
+            document.getElementById('startYear').value = year;
+            document.getElementById('endYear').value = year;
+        }
+
+        window.onload = () => {
+            initFilters();
+            loadDrugHistory(); // โหลดประวัติยา
+            document.getElementById('eventDate').valueAsDate = new Date();
+            const savedReporter = localStorage.getItem('persistent_reporter');
+            if (savedReporter) document.getElementById('reporter').value = savedReporter;
+            fetchData();
+        };
+    </script>
+</body>
+</html>
