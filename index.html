@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Medication Error Reporting - Admin Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap');
+        body { font-family: 'Kanit', sans-serif; background-color: #f8fafc; }
+        .glass-card { background: #ffffff; border-radius: 1.25rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; }
+        .severity-badge { display: flex; align-items: center; justify-content: center; height: 3.5rem; font-size: 1.25rem; font-weight: 700; border-radius: 1rem; cursor: pointer; border-width: 2px; transition: 0.2s; }
+        .severity-active { transform: scale(1.05); border-width: 4px !important; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); outline: 2px solid white; }
+        
+        .color-A { background: #f8fafc; color: #64748b; border-color: #e2e8f0; }
+        .color-B { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
+        .color-C { background: #eef2ff; color: #4f46e5; border-color: #c7d2fe; }
+        .color-D { background: #e0e7ff; color: #4338ca; border-color: #a5b4fc; }
+        .color-E { background: #fffbeb; color: #d97706; border-color: #fde68a; }
+        .color-F { background: #fff7ed; color: #ea580c; border-color: #fed7aa; }
+        .color-G { background: #fff1f2; color: #e11d48; border-color: #fecdd3; }
+        .color-H { background: #fff1f2; color: #be123c; border-color: #fda4af; }
+        .color-I { background: #450a0a; color: #ffffff; border-color: #991b1b; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-item { animation: fadeIn 0.3s ease-out forwards; }
+
+        .filter-input { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 0.5rem; font-size: 0.875rem; outline: none; }
+        .filter-input:focus { border-color: #e11d48; ring: 2px; ring-color: #fecdd3; }
+    </style>
+</head>
+<body class="min-h-screen pb-10">
+
+    <header class="bg-rose-600 text-white sticky top-0 z-50 shadow-md">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="location.reload()">
+                <div class="bg-white p-2 rounded-xl"><i class="fa-solid fa-pills text-rose-600 text-lg"></i></div>
+                <div>
+                    <h1 class="text-base font-bold leading-none">Medication Error</h1>
+                    <p class="text-[10px] text-rose-100 uppercase tracking-wider">ระบบบันทึกความคลาดเคลื่อนทางยา</p>
+                </div>
+            </div>
+            <button id="navAdminBtn" onclick="openAdminModal()" class="bg-rose-700 border border-rose-400 px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-rose-800 transition-colors">
+                <i class="fa-solid fa-user-shield mr-1"></i> สำหรับเจ้าหน้าที่
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto p-4">
+        <!-- User Form View -->
+        <section id="view-user-form" class="space-y-6">
+            <div class="glass-card p-6">
+                <h2 class="text-lg font-bold text-slate-800 mb-6 flex items-center">
+                    <i class="fa-solid fa-file-medical-alt mr-2 text-rose-500"></i> บันทึกข้อมูลอุบัติการณ์ทางยา
+                </h2>
+                <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">วันที่เกิดเหตุ</label>
+                            <input type="date" id="eventDate" class="w-full bg-slate-50 p-4 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-rose-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">HN ผู้ป่วย</label>
+                            <input type="text" id="hn" placeholder="ระบุ HN" class="w-full bg-slate-50 p-4 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-rose-500 outline-none">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">ขั้นตอนการเกิดความคลาดเคลื่อน</label>
+                        <select id="process" onchange="updateProcessExample()" class="w-full bg-slate-50 p-4 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-rose-500">
+                            <option value="">-- โปรดเลือกขั้นตอน --</option>
+                            <option value="Prescribing">Prescribing (การสั่งยาโดยแพทย์)</option>
+                            <option value="Transcribing">Transcribing (การคัดลอก/บันทึกคำสั่งยา)</option>
+                            <option value="Dispensing">Dispensing (การจัด/จ่ายยาโดยห้องยา)</option>
+                            <option value="Administration">Administration (การบริหารยา/ให้ยาแก่ผู้ป่วย)</option>
+                        </select>
+                        <div id="processExampleBox" class="mt-2 p-3 bg-slate-50 rounded-xl border border-dashed border-slate-300 hidden">
+                            <p class="text-[11px] text-slate-400 font-bold uppercase mb-1">ตัวอย่างความผิดพลาดในขั้นตอนนี้:</p>
+                            <p id="processExampleText" class="text-xs text-slate-600 italic"></p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">ชื่อยาที่มีปัญหา (จดจำชื่อที่เคยบันทึก)</label>
+                        <input type="text" id="drugName" list="drugList" placeholder="เช่น Paracetamol 500 mg/Tab หากเป็นสารน้ำ ระบุ IV Fluid" class="w-full bg-slate-50 p-4 rounded-2xl border border-slate-200 focus:ring-2 focus:ring-rose-500 outline-none">
+                        <datalist id="drugList">
+                            <!-- Options will be populated from history -->
+                        </datalist>
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">รายละเอียดเหตุการณ์</label>
+                        <textarea id="details" rows="3" placeholder="อธิบายลักษณะความผิดพลาดที่เกิดขึ้น..." class="w-full bg-slate-50 p-4 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-rose-500"></textarea>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-3">ระดับความรุนแรง (A-I)</label>
+                        <div class="grid grid-cols-3 md:grid-cols-9 gap-2">
+                            <div onclick="selectSeverity('A')" id="sev-A" class="severity-badge color-A">A</div>
+                            <div onclick="selectSeverity('B')" id="sev-B" class="severity-badge color-B">B</div>
+                            <div onclick="selectSeverity('C')" id="sev-C" class="severity-badge color-C">C</div>
+                            <div onclick="selectSeverity('D')" id="sev-D" class="severity-badge color-D">D</div>
+                            <div onclick="selectSeverity('E')" id="sev-E" class="severity-badge color-E">E</div>
+                            <div onclick="selectSeverity('F')" id="sev-F" class="severity-badge color-F">F</div>
+                            <div onclick="selectSeverity('G')" id="sev-G" class="severity-badge color-G">G</div>
+                            <div onclick="selectSeverity('H')" id="sev-H" class="severity-badge color-H">H</div>
+                            <div onclick="selectSeverity('I')" id="sev-I" class="severity-badge color-I">I</div>
+                        </div>
+                        
+                        <div id="severityDescBox" class="mt-3 p-4 rounded-2xl bg-rose-50 border border-rose-100 hidden animate-item">
+                            <h4 class="text-sm font-bold text-rose-700 flex items-center mb-1">
+                                <i class="fa-solid fa-circle-info mr-2"></i> <span id="descTitle">LEVEL</span>
+                            </h4>
+                            <p id="descScenario" class="text-[13px] text-slate-700 font-medium mb-2 leading-relaxed"></p>
+                            <div class="bg-white/60 p-2 rounded-lg">
+                                <p class="text-[11px] text-slate-400 font-bold uppercase mb-0.5">ตัวอย่างกรณีเรื่องยา:</p>
+                                <p id="descExample" class="text-[12px] text-slate-600 italic"></p>
+                            </div>
+                        </div>
+                        <input type="hidden" id="selectedSeverity">
+                    </div>
+
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">ชื่อผู้รายงาน</label>
+                        <input type="text" id="reporter" placeholder="ชื่อ-นามสกุล ของท่าน" class="w-full bg-slate-50 p-4 rounded-2xl border border-slate-200 outline-none focus:ring-2 focus:ring-rose-500">
+                    </div>
+
+                    <button onclick="submitIncident()" id="submitBtn" class="w-full bg-rose-600 text-white font-bold py-5 rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span>ส่งรายงานเข้าระบบ</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="glass-card p-6">
+                <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center">
+                    <i class="fa-solid fa-clock-rotate-left mr-2 text-rose-400"></i> ประวัติการรายงานล่าสุด
+                </h3>
+                <div id="userHistoryList" class="space-y-4">
+                    <div class="text-center py-4 text-slate-400 text-xs italic">กำลังโหลด...</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Admin Dashboard View -->
+        <section id="view-admin" class="hidden space-y-4">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xl font-bold text-slate-800">Admin Dashboard</h2>
+                <button onclick="showView('user-form')" class="bg-white px-4 py-2 rounded-xl text-xs font-bold text-slate-500 shadow-sm border border-slate-200">
+                    <i class="fa-solid fa-arrow-left mr-1"></i> กลับหน้าบันทึก
+                </button>
+            </div>
+
+            <!-- Filters Section -->
+            <div class="glass-card p-5">
+                <h3 class="text-xs font-bold text-slate-400 uppercase mb-4 flex items-center">
+                    <i class="fa-solid fa-filter mr-2"></i> ตัวกรองข้อมูล (ตามเดือนเกิดเหตุ)
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="flex flex-col space-y-1">
+                        <label class="text-[11px] font-bold text-slate-500">ตั้งแต่เดือน:</label>
+                        <div class="flex space-x-2">
+                            <select id="filterStartMonth" class="filter-input flex-1">
+                                <option value="01">มกราคม</option><option value="02">กุมภาพันธ์</option><option value="03">มีนาคม</option>
+                                <option value="04">เมษายน</option><option value="05">พฤษภาคม</option><option value="06">มิถุนายน</option>
+                                <option value="07">กรกฎาคม</option><option value="08">สิงหาคม</option><option value="09">กันยายน</option>
+                                <option value="10">ตุลาคม</option><option value="11">พฤศจิกายน</option><option value="12">ธันวาคม</option>
+                            </select>
+                            <select id="filterStartYear" class="filter-input w-24"></select>
+                        </div>
+                    </div>
+                    <div class="flex flex-col space-y-1">
+                        <label class="text-[11px] font-bold text-slate-500">ถึงเดือน:</label>
+                        <div class="flex space-x-2">
+                            <select id="filterEndMonth" class="filter-input flex-1">
+                                <option value="01">มกราคม</option><option value="02">กุมภาพันธ์</option><option value="03">มีนาคม</option>
+                                <option value="04">เมษายน</option><option value="05">พฤษภาคม</option><option value="06">มิถุนายน</option>
+                                <option value="07">กรกฎาคม</option><option value="08">สิงหาคม</option><option value="09">กันยายน</option>
+                                <option value="10">ตุลาคม</option><option value="11">พฤศจิกายน</option><option value="12">ธันวาคม</option>
+                            </select>
+                            <select id="filterEndYear" class="filter-input w-24"></select>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="applyFilters()" class="w-full mt-4 bg-slate-800 text-white py-2 rounded-xl text-xs font-bold hover:bg-slate-700 transition-all">
+                    เรียกดูข้อมูลตามเงื่อนไข
+                </button>
+            </div>
+            
+            <!-- Statistics -->
+            <div id="adminStats" class="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div class="glass-card p-4 border-l-4 border-rose-600">
+                    <p class="text-[10px] text-slate-400 font-bold uppercase">Med-Error ที่กรอง</p>
+                    <div class="flex flex-col">
+                        <p id="statTotal" class="text-2xl font-bold">0</p>
+                        <div class="text-[10px] text-slate-500 flex justify-between mt-1">
+                            <span>ลง HRMS: <span id="statSuccess" class="font-bold text-emerald-600">0</span></span>
+                            <span>ค้าง: <span id="statPending" class="font-bold text-rose-500">0</span></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-card p-4 border-l-4 border-slate-400">
+                    <p class="text-[10px] text-slate-400 font-bold uppercase">ระดับ A-B (Near Miss)</p>
+                    <p id="statAB" class="text-2xl font-bold text-slate-700">0</p>
+                </div>
+                <div class="glass-card p-4 border-l-4 border-blue-400">
+                    <p class="text-[10px] text-slate-400 font-bold uppercase">ระดับ C-D (No Harm)</p>
+                    <p id="statCD" class="text-2xl font-bold text-blue-600">0</p>
+                </div>
+                <div class="glass-card p-4 border-l-4 border-orange-500">
+                    <p class="text-[10px] text-slate-400 font-bold uppercase">ระดับ E-I (Harm)</p>
+                    <p id="statEI" class="text-2xl font-bold text-orange-600">0</p>
+                </div>
+            </div>
+
+            <div id="adminList" class="space-y-3">
+                <!-- Records will load here -->
+            </div>
+        </section>
+    </main>
+
+    <!-- Admin Login Modal -->
+    <div id="adminModal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-6">
+        <div class="bg-white rounded-[2rem] p-8 max-w-sm w-full shadow-2xl text-center">
+            <h3 class="text-xl font-bold mb-2">Admin Login</h3>
+            <p class="text-xs text-slate-400 mb-6">สำหรับจัดการสถานะ HRMS</p>
+            <input type="password" id="adminPass" placeholder="••••••••" class="w-full p-4 rounded-2xl border-2 border-slate-100 text-center text-2xl mb-6 outline-none focus:border-rose-500">
+            <div class="flex space-x-3">
+                <button onclick="closeAdminModal()" class="flex-1 py-4 text-slate-400 font-bold">ยกเลิก</button>
+                <button onclick="checkAdminPass()" class="flex-1 bg-rose-600 text-white rounded-2xl font-bold shadow-lg">ยืนยัน</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyD__XGWRrmaMrD67AInBTMlvm8v5jFz2un0ojf0JL4X5YQAmVYkYgl7IfFl3OiSUx8Lw/exec"; 
+        const ADMIN_PASS = "med1234";
+        
+        let allIncidents = [];
+        let filteredIncidents = [];
+
+        const PROCESS_EXAMPLES = {
+            'Prescribing': 'แพทย์สั่งยาผิดชนิด, สั่งยาให้ผู้ป่วยที่แพ้ยานั้น, เขียนขนาดความแรงยาผิด',
+            'Transcribing': 'พยาบาลลอกคำสั่งยาจาก OPD Card ลงใบ MAR ผิดพลาด, อ่านลายมือแพทย์ผิด',
+            'Dispensing': 'เภสัชกร/เจ้าหน้าที่ห้องยา จัดยาผิดชื่อ (Look-alike), ติดสลากยาผิดคน, จ่ายยาหมดอายุ',
+            'Administration': 'พยาบาลให้ยาผิดตัว, ให้ยาผิดคน, บริหารยาผิดวิธี (เช่น IV แต่ฉีด IM), ให้ยาผิดเวลา'
+        };
+
+        const SEV_MAP = {
+            'A': { title: 'LEVEL A', scenario: 'ยังไม่เกิดความผิดพลาด แต่มีเหตุการณ์ที่อาจทำให้เกิดความผิดพลาดได้', example: 'พบยาที่ชื่อคล้ายกันวางปนกันที่ชั้นวางยา แต่ยังไม่ได้ถูกหยิบไปใช้', color: 'color-A' },
+            'B': { title: 'LEVEL B', scenario: 'เกิดความคลาดเคลื่อนแล้ว แต่ยังไม่ถึงตัวผู้ป่วย', example: 'จัดยาผิดซองแต่พยาบาลตรวจสอบพบก่อนจะนำไปให้ผู้ป่วย', color: 'color-B' },
+            'C': { title: 'LEVEL C', scenario: 'ความคลาดเคลื่อนถึงตัวผู้ป่วยแล้ว แต่ไม่เกิดอันตราย', example: 'ให้ยาผิดชนิดแก่ผู้ป่วย แต่ยานั้นไม่มีผลข้างเคียงและไม่ทำอันตรายต่อร่างกาย', color: 'color-C' },
+            'D': { title: 'LEVEL D', scenario: 'ความคลาดเคลื่อนถึงตัวผู้ป่วย ไม่เกิดอันตราย แต่ต้องเฝ้าระวังเพิ่ม', example: 'ให้ยาเกินขนาดเล็กน้อย ต้องตรวจสัญญาณชีพเพิ่มถี่ขึ้นเพื่อความปลอดภัย', color: 'color-D' },
+            'E': { title: 'LEVEL E', scenario: 'เกิดอันตรายชั่วคราว และต้องได้รับการรักษาหรือแก้ไข', example: 'ให้ยาผิดจนผู้ป่วยเกิดผื่นแพ้ยา ต้องได้รับยาแก้แพ้รักษาเพิ่มเติม', color: 'color-E' },
+            'F': { title: 'LEVEL F', scenario: 'เกิดอันตรายชั่วคราว ทำให้นอนโรงพยาบาลนานขึ้น', example: 'ให้ยาผิดทำให้ผู้ป่วยความดันตก ต้องย้ายเข้า ICU เพื่อดูแลใกล้ชิดเพิ่ม 2 วัน', color: 'color-F' },
+            'G': { title: 'LEVEL G', scenario: 'เกิดอันตรายถาวรแก่ผู้ป่วย', example: 'ให้ยาทางเส้นเลือดผิดจนเกิดภาวะเนื้อตาย (Necrosis) จนสูญเสียอวัยวะ', color: 'color-G' },
+            'H': { title: 'LEVEL H', scenario: 'เกิดเหตุวิกฤต เป็นอันตรายต่อชีวิต ต้องช่วยฟื้นคืนชีพ', example: 'ผู้ป่วยแพ้ยารุนแรงจนหยุดหายใจ ต้องทำการ CPR', color: 'color-H' },
+            'I': { title: 'LEVEL I', scenario: 'ความคลาดเคลื่อนเป็นเหตุให้ผู้ป่วยเสียชีวิต', example: 'ให้ยาผิดประเภทอย่างรุนแรงจนผู้ป่วยเสียชีวิตโดยตรงจากยานั้น', color: 'color-I' }
+        };
+
+        window.onload = function() {
+            initFilters();
+            fetchInitialHistory();
+        };
+
+        function initFilters() {
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            const startYearEl = document.getElementById('filterStartYear');
+            const endYearEl = document.getElementById('filterEndYear');
+            
+            for (let i = 0; i < 5; i++) {
+                const year = currentYear - i;
+                const opt1 = document.createElement('option');
+                opt1.value = year; opt1.textContent = year + 543;
+                const opt2 = document.createElement('option');
+                opt2.value = year; opt2.textContent = year + 543;
+                startYearEl.appendChild(opt1);
+                endYearEl.appendChild(opt2);
+            }
+
+            document.getElementById('filterStartMonth').value = "01";
+            document.getElementById('filterEndMonth').value = String(now.getMonth() + 1).padStart(2, '0');
+        }
+
+        function applyFilters() {
+            const startM = document.getElementById('filterStartMonth').value;
+            const startY = document.getElementById('filterStartYear').value;
+            const endM = document.getElementById('filterEndMonth').value;
+            const endY = document.getElementById('filterEndYear').value;
+
+            const startTime = new Date(`${startY}-${startM}-01`).getTime();
+            const endMonthNext = parseInt(endM) === 12 ? 1 : parseInt(endM) + 1;
+            const endYearNext = parseInt(endM) === 12 ? parseInt(endY) + 1 : parseInt(endY);
+            const endTime = new Date(`${endYearNext}-${String(endMonthNext).padStart(2, '0')}-01`).getTime();
+
+            filteredIncidents = allIncidents.filter(item => {
+                const itemDate = new Date(item.eventDate).getTime();
+                return itemDate >= startTime && itemDate < endTime;
+            });
+
+            renderAdminList();
+        }
+
+        function updateProcessExample() {
+            const proc = document.getElementById('process').value;
+            const box = document.getElementById('processExampleBox');
+            const text = document.getElementById('processExampleText');
+            if (proc && PROCESS_EXAMPLES[proc]) {
+                box.classList.remove('hidden');
+                text.innerText = PROCESS_EXAMPLES[proc];
+            } else {
+                box.classList.add('hidden');
+            }
+        }
+
+        function selectSeverity(code) {
+            document.getElementById('selectedSeverity').value = code;
+            document.querySelectorAll('.severity-badge').forEach(el => el.classList.remove('severity-active'));
+            document.getElementById(`sev-${code}`).classList.add('severity-active');
+            
+            const descBox = document.getElementById('severityDescBox');
+            const info = SEV_MAP[code];
+            
+            descBox.classList.remove('hidden');
+            document.getElementById('descTitle').innerText = info.title;
+            document.getElementById('descScenario').innerText = info.scenario;
+            document.getElementById('descExample').innerText = info.example;
+        }
+
+        async function fetchInitialHistory() {
+            const list = document.getElementById('userHistoryList');
+            try {
+                const res = await fetch(`${SCRIPT_URL}?action=read&t=${Date.now()}`);
+                const result = await res.json();
+                if (result.status === 'success') {
+                    allIncidents = (result.data || []).filter(i => i && i.id).reverse();
+                    renderUserHistory();
+                    updateDrugSuggestions(); // New: update drug list autocomplete
+                }
+            } catch (e) { 
+                list.innerHTML = `<div class="text-center text-rose-500 text-xs italic">ไม่สามารถเชื่อมต่อฐานข้อมูลได้</div>`; 
+            }
+        }
+
+        // New function to update the datalist for drug name autocomplete
+        function updateDrugSuggestions() {
+            const drugList = document.getElementById('drugList');
+            // Get unique drug names from all incidents, trim and filter out empty ones
+            const uniqueDrugs = [...new Set(allIncidents
+                .map(item => item.drugName ? item.drugName.trim() : '')
+                .filter(name => name !== '')
+            )];
+            
+            // Sort alphabetically for easier browsing
+            uniqueDrugs.sort((a, b) => a.localeCompare(b, 'th'));
+
+            // Populate the datalist
+            drugList.innerHTML = uniqueDrugs.map(name => `<option value="${name}">`).join('');
+        }
+
+        function renderUserHistory() {
+            const list = document.getElementById('userHistoryList');
+            const recent = allIncidents.slice(0, 5);
+            if (recent.length === 0) { list.innerHTML = '<p class="text-center py-4 text-slate-400 text-xs">ไม่พบประวัติการรายงาน</p>'; return; }
+            
+            list.innerHTML = recent.map(item => `
+                <div class="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm animate-item">
+                    <div class="flex items-center space-x-3 mb-2">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center font-bold border-2 shrink-0 ${SEV_MAP[item.severity]?.color || ''}">${item.severity || '?'}</div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-[10px] text-slate-400 font-bold uppercase truncate">HN: ${item.hn || '-'} | ${String(item.eventDate || '').split('T')[0]}</p>
+                            <p class="text-[13px] text-slate-800 font-bold truncate">${item.drugName || '-'}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2 mb-2">
+                        <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-bold uppercase">${item.process || '-'}</span>
+                    </div>
+                    <p class="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 whitespace-pre-wrap">${item.details || 'ไม่มีรายละเอียด'}</p>
+                </div>
+            `).join('');
+        }
+
+        async function submitIncident() {
+            const btn = document.getElementById('submitBtn');
+            const data = {
+                action: 'create',
+                id: "MED-" + Date.now(),
+                eventDate: document.getElementById('eventDate').value,
+                hn: document.getElementById('hn').value || '-',
+                process: document.getElementById('process').value,
+                drugName: document.getElementById('drugName').value,
+                details: document.getElementById('details').value,
+                severity: document.getElementById('selectedSeverity').value,
+                reporter: document.getElementById('reporter').value,
+                hrms_Status: 'Pending'
+            };
+
+            if (!data.eventDate || !data.process || !data.drugName || !data.severity || !data.reporter) {
+                alert('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> กำลังบันทึก...';
+            try {
+                await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(data) });
+                alert('บันทึกข้อมูลเรียบร้อยแล้ว');
+                location.reload();
+            } catch (e) { 
+                alert('เกิดข้อผิดพลาดในการบันทึก'); 
+                btn.disabled = false; 
+                btn.innerHTML = 'ส่งรายงานเข้าระบบ'; 
+            }
+        }
+
+        function openAdminModal() { document.getElementById('adminModal').classList.remove('hidden'); }
+        function closeAdminModal() { document.getElementById('adminModal').classList.add('hidden'); document.getElementById('adminPass').value = ''; }
+        
+        function checkAdminPass() {
+            if (document.getElementById('adminPass').value === ADMIN_PASS) { 
+                closeAdminModal(); 
+                showView('admin'); 
+            } else { 
+                alert('รหัสผ่านไม่ถูกต้อง'); 
+            }
+        }
+
+        function showView(view) {
+            document.getElementById('view-user-form').classList.toggle('hidden', view !== 'user-form');
+            document.getElementById('view-admin').classList.toggle('hidden', view !== 'admin');
+            if (view === 'admin') fetchAdminData();
+        }
+
+        async function fetchAdminData() {
+            const list = document.getElementById('adminList');
+            list.innerHTML = '<p class="text-center py-10"><i class="fa-solid fa-spinner animate-spin text-rose-500"></i> กำลังดึงข้อมูลล่าสุด...</p>';
+            try {
+                const res = await fetch(`${SCRIPT_URL}?action=read&t=${Date.now()}`);
+                const result = await res.json();
+                if (result.status === 'success') {
+                    allIncidents = (result.data || []).filter(i => i && i.id).reverse();
+                    applyFilters();
+                }
+            } catch (e) { list.innerHTML = '<p class="text-center py-10 text-rose-500">ไม่สามารถดึงข้อมูลได้</p>'; }
+        }
+
+        function renderAdminList() {
+            const list = document.getElementById('adminList');
+            
+            document.getElementById('statTotal').innerText = filteredIncidents.length;
+            const successCount = filteredIncidents.filter(i => i.hrms_Status === 'Completed').length;
+            document.getElementById('statSuccess').innerText = successCount;
+            document.getElementById('statPending').innerText = filteredIncidents.length - successCount;
+
+            document.getElementById('statAB').innerText = filteredIncidents.filter(i => ['A', 'B'].includes(i.severity)).length;
+            document.getElementById('statCD').innerText = filteredIncidents.filter(i => ['C', 'D'].includes(i.severity)).length;
+            document.getElementById('statEI').innerText = filteredIncidents.filter(i => ['E', 'F', 'G', 'H', 'I'].includes(i.severity)).length;
+
+            if (filteredIncidents.length === 0) {
+                list.innerHTML = '<p class="text-center py-10 text-slate-400 italic">ไม่พบข้อมูลตามช่วงเวลาที่เลือก</p>';
+                return;
+            }
+
+            list.innerHTML = filteredIncidents.map(item => `
+                <div class="p-5 bg-white rounded-2xl border border-slate-100 shadow-sm animate-item">
+                    <div class="flex justify-between items-start mb-3">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 rounded-xl flex items-center justify-center font-bold border-2 ${SEV_MAP[item.severity]?.color || ''}">${item.severity}</div>
+                            <div>
+                                <p class="text-[10px] text-slate-400 font-bold uppercase">HN: ${item.hn} | ${String(item.eventDate).split('T')[0]}</p>
+                                <p class="text-sm font-bold text-slate-800">${item.drugName}</p>
+                            </div>
+                        </div>
+                        <div id="btn-container-${item.id}">
+                            ${item.hrms_Status === 'Completed' 
+                                ? '<span class="flex items-center text-[10px] bg-emerald-100 text-emerald-600 px-3 py-1.5 rounded-xl font-bold"><i class="fa-solid fa-check-circle mr-1"></i> HRMS เรียบร้อย</span>'
+                                : `<button onclick="markDone('${item.id}')" class="text-[10px] bg-rose-600 text-white px-3 py-1.5 rounded-xl font-bold shadow-md hover:bg-rose-700 active:scale-95">ยืนยัน HRMS</button>`}
+                        </div>
+                    </div>
+                    <div class="mb-2"><span class="text-[9px] font-bold bg-slate-100 text-slate-500 px-2 py-0.5 rounded">${item.process}</span></div>
+                    <p class="text-xs text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-100 whitespace-pre-wrap">${item.details || 'ไม่มีรายละเอียด'}</p>
+                    <div class="flex justify-between items-center mt-3">
+                        <p class="text-[9px] text-slate-400 italic">รายงานโดย: ${item.reporter}</p>
+                        <p class="text-[9px] text-slate-300">ID: ${item.id}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function markDone(id) {
+            const btnContainer = document.getElementById(`btn-container-${id}`);
+            if (!confirm('ยืนยันสถานะการลงระบบ HRMS?')) return;
+            
+            btnContainer.innerHTML = '<i class="fa-solid fa-spinner animate-spin text-rose-500 text-sm"></i>';
+            
+            try {
+                await fetch(SCRIPT_URL, { 
+                    method: 'POST', 
+                    mode: 'no-cors', 
+                    body: JSON.stringify({ 
+                        action: 'update_hrms', 
+                        id: id, 
+                        status: 'Completed' 
+                    }) 
+                });
+                
+                setTimeout(fetchAdminData, 500);
+            } catch (e) { 
+                alert('เกิดข้อผิดพลาด');
+                fetchAdminData();
+            }
+        }
+    </script>
+</body>
+</html>
